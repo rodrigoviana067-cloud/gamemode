@@ -1,4 +1,4 @@
-name: Compilar SA-MP Pawn (Final)
+name: Compilar SA-MP Pawn (FINAL REAL)
 
 on:
   push:
@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout do repositório
+    - name: Checkout
       uses: actions/checkout@v4
 
     - name: Baixar Pawn Compiler 3.10.10
@@ -23,26 +23,19 @@ jobs:
         tar -xzf pawnc-3.10.10-linux.tar.gz
         chmod +x pawnc-3.10.10-linux/bin/pawncc
 
-    - name: Encontrar e instalar libpawnc.so (AUTO)
+    - name: Instalar libpawnc.so (auto-detect)
       run: |
-        echo "Procurando libpawnc.so..."
         LIB_PATH=$(find pawnc-3.10.10-linux -name "libpawnc.so" | head -n 1)
-
-        if [ -z "$LIB_PATH" ]; then
-          echo "ERRO: libpawnc.so não encontrada"
-          exit 1
-        fi
-
-        echo "Lib encontrada em: $LIB_PATH"
         sudo cp "$LIB_PATH" /usr/lib/
         sudo ldconfig
 
-    - name: Compilar gamemodes
+    - name: Compilar gamemodes (SINTAXE CORRETA)
       run: |
         mkdir -p compiled
         for file in gamemodes/*.pwn; do
+          name=$(basename "$file" .pwn)
           echo "Compilando $file"
-          ./pawnc-3.10.10-linux/bin/pawncc "$file" -i./include -o "compiled/$(basename "${file%.pwn}.amx")"
+          ./pawnc-3.10.10-linux/bin/pawncc "$file" -i./include -ocompiled/$name.amx
         done
 
     - name: Upload dos AMX
