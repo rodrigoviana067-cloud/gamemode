@@ -1,4 +1,4 @@
-name: Compilar SA-MP Pawn (Seguro)
+name: Compilar SA-MP Pawn (Final)
 
 on:
   push:
@@ -23,9 +23,18 @@ jobs:
         tar -xzf pawnc-3.10.10-linux.tar.gz
         chmod +x pawnc-3.10.10-linux/bin/pawncc
 
-    - name: Instalar libpawnc.so no sistema (FIX DEFINITIVO)
+    - name: Encontrar e instalar libpawnc.so (AUTO)
       run: |
-        sudo cp pawnc-3.10.10-linux/bin/libpawnc.so /usr/lib/
+        echo "Procurando libpawnc.so..."
+        LIB_PATH=$(find pawnc-3.10.10-linux -name "libpawnc.so" | head -n 1)
+
+        if [ -z "$LIB_PATH" ]; then
+          echo "ERRO: libpawnc.so não encontrada"
+          exit 1
+        fi
+
+        echo "Lib encontrada em: $LIB_PATH"
+        sudo cp "$LIB_PATH" /usr/lib/
         sudo ldconfig
 
     - name: Compilar gamemodes
