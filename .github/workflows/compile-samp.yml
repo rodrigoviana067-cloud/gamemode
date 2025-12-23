@@ -2,14 +2,15 @@ name: Compilar SA-MP
 
 on:
   push:
-  workflow_dispatch:
+    paths:
+      - "gamemodes/*.pwn"
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout do repositório
         uses: actions/checkout@v4
 
       - name: Instalar dependências
@@ -22,20 +23,18 @@ jobs:
           wget https://github.com/pawn-lang/compiler/releases/download/v3.10.10/pawnc-3.10.10-linux.tar.gz
           tar -xzf pawnc-3.10.10-linux.tar.gz
 
-      - name: Registrar libpawnc.so
+      - name: Criar pasta include vazia
         run: |
-          sudo cp pawnc-3.10.10-linux/lib/libpawnc.so /usr/lib/
-          sudo ldconfig
+          mkdir -p include
+          touch include/a_samp.inc
 
-            - name: Compilar gamemodes
+      - name: Compilar gamemodes
         run: |
           mkdir -p compiled
-
           for file in gamemodes/*.pwn; do
             echo "Compilando $file"
             ./pawnc-3.10.10-linux/bin/pawncc "$file" -i./include -o "compiled/$(basename "${file%.pwn}.amx")"
           done
-
 
       - name: Upload AMX
         uses: actions/upload-artifact@v4
