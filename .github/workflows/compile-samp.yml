@@ -21,13 +21,17 @@ jobs:
           wget https://github.com/pawn-lang/compiler/releases/download/v3.10.10/pawnc-3.10.10-linux.tar.gz
           tar -xzf pawnc-3.10.10-linux.tar.gz
 
+      - name: Registrar libpawnc.so
+        run: |
+          sudo cp pawnc-3.10.10-linux/bin/libpawnc.so /usr/lib/
+          sudo ldconfig
+
       - name: Compilar gamemodes
         run: |
           mkdir -p compiled
 
           for file in gamemodes/*.pwn; do
             echo "Compilando $file"
-            LD_LIBRARY_PATH=$(pwd)/pawnc-3.10.10-linux/bin \
             ./pawnc-3.10.10-linux/bin/pawncc "$file" -i include -o "compiled/$(basename "${file%.pwn}.amx")"
           done
 
