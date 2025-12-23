@@ -9,7 +9,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Instalar dependências
         run: |
@@ -23,7 +24,7 @@ jobs:
 
       - name: Registrar libpawnc.so
         run: |
-          sudo cp pawnc-3.10.10-linux/bin/libpawnc.so /usr/lib/
+          sudo cp pawnc-3.10.10-linux/lib/libpawnc.so /usr/lib/
           sudo ldconfig
 
       - name: Compilar gamemodes
