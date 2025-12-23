@@ -14,4 +14,3 @@ public OnPlayerConnect(playerid)
     SendClientMessage(playerid, COR_BRANCO, "Bem-vindo a CIDADE NOVA RP!");
     return 1;
 }
-
