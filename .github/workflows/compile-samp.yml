@@ -23,10 +23,10 @@ jobs:
           wget https://github.com/pawn-lang/compiler/releases/download/v3.10.10/pawnc-3.10.10-linux.tar.gz
           tar -xzf pawnc-3.10.10-linux.tar.gz
 
-      - name: Criar pasta include vazia
+      - name: Criar include mínimo
         run: |
           mkdir -p include
-          touch include/a_samp.inc
+          echo "// include mínimo" > include/a_samp.inc
 
       - name: Compilar gamemodes
         run: |
