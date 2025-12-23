@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "gamemodes/*.pwn"
+  workflow_dispatch:
 
 jobs:
   build:
