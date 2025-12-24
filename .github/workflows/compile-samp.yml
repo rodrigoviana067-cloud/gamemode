@@ -25,6 +25,12 @@ jobs:
         tar -xzf pawnc-3.10.10-linux.tar.gz
         chmod +x pawnc-3.10.10-linux/bin/pawncc
 
+    - name: Instalar libpawnc.so (auto-detect)
+      run: |
+        LIB_PATH=$(find pawnc-3.10.10-linux -name "libpawnc.so" | head -n 1)
+        sudo cp "$LIB_PATH" /usr/lib/
+        sudo ldconfig
+
     - name: Criar pasta de compilados
       run: mkdir -p compiled
 
