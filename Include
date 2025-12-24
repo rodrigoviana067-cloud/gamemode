@@ -1,3 +1,0 @@
-git add include/zcmd.inc
-git commit -m "Adicionar zcmd.inc"
-git push
