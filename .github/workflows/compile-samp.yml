@@ -4,9 +4,11 @@ on:
   push:
     paths:
       - "gamemodes/*.pwn"
+      - "filterscripts/*.pwn"
   pull_request:
     paths:
       - "gamemodes/*.pwn"
+      - "filterscripts/*.pwn"
   workflow_dispatch:
 
 jobs:
@@ -23,23 +25,29 @@ jobs:
         tar -xzf pawnc-3.10.10-linux.tar.gz
         chmod +x pawnc-3.10.10-linux/bin/pawncc
 
-    - name: Instalar libpawnc.so (auto-detect)
-      run: |
-        LIB_PATH=$(find pawnc-3.10.10-linux -name "libpawnc.so" | head -n 1)
-        sudo cp "$LIB_PATH" /usr/lib/
-        sudo ldconfig
+    - name: Criar pasta de compilados
+      run: mkdir -p compiled
 
-    - name: Compilar gamemodes (SINTAXE CORRETA)
+    - name: Compilar gamemodes
       run: |
-        mkdir -p compiled
+        shopt -s nullglob
         for file in gamemodes/*.pwn; do
           name=$(basename "$file" .pwn)
-          echo "Compilando $file"
+          echo "Compilando gamemode: $file"
+          ./pawnc-3.10.10-linux/bin/pawncc "$file" -i./include -ocompiled/$name.amx
+        done
+
+    - name: Compilar filterscripts
+      run: |
+        shopt -s nullglob
+        for file in filterscripts/*.pwn; do
+          name=$(basename "$file" .pwn)
+          echo "Compilando filterscript: $file"
           ./pawnc-3.10.10-linux/bin/pawncc "$file" -i./include -ocompiled/$name.amx
         done
 
     - name: Upload dos AMX
       uses: actions/upload-artifact@v4
       with:
-        name: gamemodes-amx
+        name: amx-files
         path: compiled/*.amx
