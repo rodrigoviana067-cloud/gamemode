@@ -3,9 +3,9 @@
 #include <zcmd>
 #include <sscanf2>
 
-#define COR_VERDE 0x33AA33FF
+#define COR_VERDE   0x33AA33FF
 #define COR_VERMELHO 0xAA3333FF
-#define COR_BRANCO 0xFFFFFFFF
+#define COR_BRANCO  0xFFFFFFFF
 #define COR_AMARELO 0xFFFF00FF
 
 // =====================
@@ -111,51 +111,4 @@ CMD:pegartrabalho(playerid, params[])
         {
             PlayerJob[playerid] = EMPREGO_MOTORISTA;
             SendClientMessage(playerid, COR_VERDE,
-                "Você agora é Motorista.");
-        }
-        case 2:
-        {
-            PlayerJob[playerid] = EMPREGO_MECANICO;
-            SendClientMessage(playerid, COR_VERDE,
-                "Você agora é Mecânico.");
-        }
-    }
-    return 1;
-}
-
-// Comprar carro simples
-CMD:comprarcarro(playerid, params[])
-{
-    if(GetPlayerMoney(playerid) < 5000)
-        return SendClientMessage(playerid, COR_VERMELHO,
-            "Você precisa de $5000.");
-
-    GivePlayerMoney(playerid, -5000);
-    new veh = CreateVehicle(411,
-        GetPlayerPos(playerid),
-        GetPlayerFacingAngle(playerid),
-        -1, -1, -1);
-
-    PutPlayerInVehicle(playerid, veh, 0);
-    SendClientMessage(playerid, COR_VERDE,
-        "Carro comprado com sucesso!");
-    return 1;
-}
-
-// Meu emprego
-CMD:meuemprego(playerid, params[])
-{
-    switch(PlayerJob[playerid])
-    {
-        case EMPREGO_NENHUM:
-            SendClientMessage(playerid, COR_BRANCO,
-                "Você não possui emprego.");
-        case EMPREGO_MOTORISTA:
-            SendClientMessage(playerid, COR_BRANCO,
-                "Seu emprego: Motorista.");
-        case EMPREGO_MECANICO:
-            SendClientMessage(playerid, COR_BRANCO,
-                "Seu emprego: Mecânico.");
-    }
-    return 1;
-}
+                "Você agora é Motor
