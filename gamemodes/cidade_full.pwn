@@ -1,9 +1,9 @@
 #include <a_samp>
 
-#define COR_VERDE   0x33AA33FF
+#define COR_VERDE    0x33AA33FF
 #define COR_VERMELHO 0xAA3333FF
-#define COR_BRANCO  0xFFFFFFFF
-#define COR_AMARELO 0xFFFF00FF
+#define COR_BRANCO   0xFFFFFFFF
+#define COR_AMARELO  0xFFFF00FF
 
 new PlayerJob[MAX_PLAYERS];
 
@@ -14,7 +14,7 @@ enum
     EMPREGO_MECANICO
 };
 
-// Coordenadas importantes
+// Coordenadas
 #define PREF_X 1481.0
 #define PREF_Y -1771.0
 #define PREF_Z 18.8
@@ -22,6 +22,19 @@ enum
 #define CONC_Y -1150.0
 #define CONC_Z 24.0
 
+// --------------------
+// Forwards
+// --------------------
+forward OnGameModeInit();
+forward OnPlayerConnect(playerid);
+forward CMD_empregos(playerid, params[]);
+forward CMD_pegartrabalho(playerid, params[]);
+forward CMD_meuemprego(playerid, params[]);
+forward CMD_comprarcarro(playerid, params[]);
+
+// --------------------
+// Gamemode Init
+// --------------------
 public OnGameModeInit()
 {
     print("CIDADE FULL RP carregado!");
@@ -40,6 +53,9 @@ public OnGameModeInit()
     return 1;
 }
 
+// --------------------
+// Player Connect
+// --------------------
 public OnPlayerConnect(playerid)
 {
     PlayerJob[playerid] = EMPREGO_NENHUM;
@@ -63,11 +79,17 @@ public CMD_empregos(playerid, params[])
 public CMD_pegartrabalho(playerid, params[])
 {
     new id;
-    if(sscanf(params, "d", id))
-        return SendClientMessage(playerid, COR_VERMELHO, "Uso: /pegartrabalho [id]");
+    if(strlen(params) == 0 || !str2num(params, id))
+    {
+        SendClientMessage(playerid, COR_VERMELHO, "Uso: /pegartrabalho [id]");
+        return 1;
+    }
 
     if(id < 1 || id > 2)
-        return SendClientMessage(playerid, COR_VERMELHO, "Emprego inválido.");
+    {
+        SendClientMessage(playerid, COR_VERMELHO, "Emprego inválido.");
+        return 1;
+    }
 
     if(id == 1)
     {
@@ -99,7 +121,10 @@ public CMD_meuemprego(playerid, params[])
 public CMD_comprarcarro(playerid, params[])
 {
     if(GetPlayerMoney(playerid) < 5000)
-        return SendClientMessage(playerid, COR_VERMELHO, "Você precisa de $5000.");
+    {
+        SendClientMessage(playerid, COR_VERMELHO, "Você precisa de $5000.");
+        return 1;
+    }
 
     GivePlayerMoney(playerid, -5000);
     new Float:x, y, z;
