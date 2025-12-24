@@ -1,4 +1,7 @@
 #include <a_samp>
+#include <core>
+#include <zcmd>
+#include <sscanf2>
 
 #define COR_BRANCO 0xFFFFFFFF
 
