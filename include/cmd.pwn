@@ -371,10 +371,10 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	if(strcmp(cmd, "/testformat", true) == 0) {
 	    new strtest[256];
 	    new File:f = fopen("test.txt",io_write);
-	    format(strtest,256,"[chat] %d %s\r\n",24,"þÿÿþ");
+	    format(strtest,256,"[chat] %d %s\r\n",24,"Ã¾Ã¿Ã¿Ã¾");
 	    SendClientMessage(playerid,0xFFFFFFFF,strtest);
 	    fwrite(f,strtest);
-	    format(strtest,256,"[chat] %d %s\r\n",34," þÿÿþ");
+	    format(strtest,256,"[chat] %d %s\r\n",34," Ã¾Ã¿Ã¿Ã¾");
 	    SendClientMessage(playerid,0xFFFFFFFF,strtest);
 	    fwrite(f,strtest);
 	    fclose(f);
@@ -493,3 +493,4 @@ public OnEnterExitModShop(playerid, enterexit, interiorid)
 }
 */
 //-------------------------------------------
+
