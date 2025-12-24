@@ -7,6 +7,7 @@
 #define MAX_PLAYERS 1000
 #define MAX_PLAYER_NAME 24
 
+// Natives básicos
 native print(const string[]);
 native SetGameModeText(const string[]);
 native SendClientMessage(playerid, color, const message[]);
@@ -20,3 +21,4 @@ native DestroyVehicle(vehicleid);
 native CreatePickup(modelid, type, Float:x, Float:y, Float:z);
 native Create3DTextLabel(const text[], color, Float:x, Float:y, Float:z, Float:drawdistance, virtualworld);
 native GetMaxPlayers();
+native str2num(const string[], &value);
