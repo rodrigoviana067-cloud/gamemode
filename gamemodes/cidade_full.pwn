@@ -1,4 +1,5 @@
 #include <a_samp>
+#include <core>
 #include <zcmd>
 #include <sscanf2>
 
