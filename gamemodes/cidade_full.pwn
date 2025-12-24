@@ -1,6 +1,5 @@
 #define _RATIONAL      // Ativa suporte a floats
 #include <a_samp.inc>
-#include <string>       // Para strlen, strcpy, etc
 
 // --------------------------------------------------
 // Forwards
@@ -17,7 +16,6 @@ forward CMD_comprarcarro(playerid, params[]);
 // --------------------------------------------------
 // Variáveis globais
 // --------------------------------------------------
-new Float:spawnX = 0.0, Float:spawnY = 0.0, Float:spawnZ = 3.0;
 
 // --------------------------------------------------
 // Gamemode init / exit
