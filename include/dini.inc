@@ -62,7 +62,7 @@ stock dini_Set(const filename[], const key[], const value[]) {
 	new bool:wasset=false;
 	
 	// Let's remove the old *.part file if there was one.
-	strformat__(tmpres,sizeof(tmpres),"%s.part",filename);
+	format__(tmpres,sizeof(tmpres),"%s.part",filename);
 	fremove(tmpres);
 	
 	// We'll open the source file.
@@ -83,7 +83,7 @@ stock dini_Set(const filename[], const key[], const value[]) {
 			&& !strcmp(tmpres, key, true, key_length)	
 		) {
 				// We've got what needs to be replaced!
-				strformat__(tmpres,sizeof(tmpres),"%s=%s",key,value);
+				format__(tmpres,sizeof(tmpres),"%s=%s",key,value);
 				wasset=true;
 		} else {
 			DINI_StripNewLine(tmpres);
@@ -93,7 +93,7 @@ stock dini_Set(const filename[], const key[], const value[]) {
 	}
 
 	if (!wasset) {
-		strformat__(tmpres,sizeof(tmpres),"%s=%s",key,value);
+		format__(tmpres,sizeof(tmpres),"%s=%s",key,value);
 		fwrite(fwhnd,tmpres);
 		fwrite(fwhnd,"\r\n");
 	}
@@ -111,7 +111,7 @@ stock dini_Set(const filename[], const key[], const value[]) {
 
 stock dini_IntSet(const filename[], const key[], value) {
 	new valuestring[DINI_MAX_STRING];
-	strformat__(valuestring,DINI_MAX_STRING,"%d",value);
+	format__(valuestring,DINI_MAX_STRING,"%d",value);
 	return dini_Set(filename,key,valuestring);
 }
 
@@ -121,7 +121,7 @@ stock dini_Int(const filename[], const key[]) {
 
 stock dini_FloatSet(const filename[], const key[], Float:value) {
    new valuestring[DINI_MAX_STRING];
-   strformat__(valuestring,DINI_MAX_STRING,"%f",value);
+   format__(valuestring,DINI_MAX_STRING,"%f",value);
    return dini_Set(filename,key,valuestring);
 }
 
@@ -150,7 +150,7 @@ stock dini_Unset(const filename[], const key[]) {
 	new tmpres[DINI_MAX_STRING];
 	
 	// Let's remove the old *.part file if there was one.
-	strformat__(tmpres,DINI_MAX_STRING,"%s.part",filename);
+	format__(tmpres,DINI_MAX_STRING,"%s.part",filename);
 	fremove(tmpres);
 	
 	// We'll open the source file.
@@ -180,7 +180,7 @@ stock dini_Unset(const filename[], const key[]) {
 	fclose(fohnd);
 	fclose(fwhnd);
 
-	strformat__(tmpres,DINI_MAX_STRING,"%s.part",filename);
+	format__(tmpres,DINI_MAX_STRING,"%s.part",filename);
 	if (DINI_fcopytextfile(tmpres,filename)) {
 		return fremove(tmpres);
 	}
@@ -262,7 +262,7 @@ stock DINI_fcopytextfile(const oldname[], const newname[]) {
 	new tmpres[DINI_MAX_STRING];
 	while (fread(ohnd,tmpres)) {
 		DINI_StripNewLine(tmpres);
-		strformat__(tmpres,sizeof(tmpres),"%s\r\n",tmpres);
+		format__(tmpres,sizeof(tmpres),"%s\r\n",tmpres);
 		fwrite(nhnd,tmpres);
 	}
 	fclose(ohnd);
