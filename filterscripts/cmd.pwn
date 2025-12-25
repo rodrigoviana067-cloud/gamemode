@@ -1,7 +1,7 @@
 #include <a_samp>
 #include <zcmd>
 #include <sscanf2>
-#include <simple_ini> // <<< aqui usamos o ini.inc
+#include <simple_ini>
 
 // =====================
 // CORES
@@ -35,17 +35,6 @@ new LastInterior[MAX_PLAYERS];
 new LastVW[MAX_PLAYERS];
 
 // =====================
-// FUNÇÃO AUXILIAR STRNCMP
-// =====================
-stock bool:strn_cmp(const s1[], const s2[], n)
-{
-    new temp1[128], temp2[128];
-    strmid(temp1, s1, 0, n);
-    strmid(temp2, s2, 0, n);
-    return strcmp(temp1, temp2) == 0;
-}
-
-// =====================
 // FUNÇÕES AUX
 // =====================
 stock GetUserFile(playerid, dest[], size)
@@ -63,10 +52,8 @@ stock RegistrarConta(playerid, const senha[])
     new file[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    ini_Open(file);
-    ini_WriteString("Conta", "Senha", senha);
-    ini_WriteInt("Conta", "Admin", 0);
-    ini_Close();
+    WriteINIString(file, "Conta", "Senha", senha);
+    WriteINIInt(file, "Conta", "Admin", 0);
 
     return 1;
 }
@@ -79,11 +66,8 @@ stock bool:ChecarSenha(playerid, const senha[])
     new file[64], saved[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    ini_Open(file);
-    ini_ReadString("Conta", "Senha", "", saved, sizeof(saved));
-    ini_Close();
-
-    return !strcmp(saved, senha);
+    ReadINIString(file, "Conta", "Senha", "", saved, sizeof(saved));
+    return strcmp(saved, senha) == 0;
 }
 
 // =====================
@@ -94,38 +78,17 @@ stock CarregarAdmin(playerid)
     new file[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    ini_Open(file);
-    PlayerAdminLevel[playerid] = ini_ReadInt("Conta", "Admin", 0);
-    ini_Close();
+    PlayerAdminLevel[playerid] = ReadINIInt(file, "Conta", "Admin", 0);
 }
 
 stock SalvarAdmin(playerid)
 {
-    new file[64];
+    new file[64], senha[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    new senha[64];
-    if (!GetSenhaSalva(playerid, senha, sizeof(senha))) return;
-
-    ini_Open(file);
-    ini_WriteString("Conta", "Senha", senha);
-    ini_WriteInt("Conta", "Admin", PlayerAdminLevel[playerid]);
-    ini_Close();
-}
-
-// =====================
-// SENHA
-// =====================
-stock GetSenhaSalva(playerid, senha[], size)
-{
-    new file[64];
-    GetUserFile(playerid, file, sizeof(file));
-
-    ini_Open(file);
-    ini_ReadString("Conta", "Senha", "", senha, size);
-    ini_Close();
-
-    return strlen(senha) > 0;
+    ReadINIString(file, "Conta", "Senha", "", senha, sizeof(senha));
+    WriteINIString(file, "Conta", "Senha", senha);
+    WriteINIInt(file, "Conta", "Admin", PlayerAdminLevel[playerid]);
 }
 
 // =====================
@@ -135,30 +98,21 @@ stock SalvarPosicao(playerid)
 {
     if (!Logado[playerid]) return;
 
-    new file[64];
+    new file[64], senha[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    new senha[64];
-    if (!GetSenhaSalva(playerid, senha, sizeof(senha))) return;
+    ReadINIString(file, "Conta", "Senha", "", senha, sizeof(senha));
 
-    new Float:x, Float:y, Float:z;
+    new Float:x, y, z;
     GetPlayerPos(playerid, x, y, z);
 
-    ini_Open(file);
-    ini_WriteString("Conta", "Senha", senha);
-    ini_WriteInt("Conta", "Admin", PlayerAdminLevel[playerid]);
-    ini_WriteFloat("Posicao", "X", x);
-    ini_WriteFloat("Posicao", "Y", y);
-    ini_WriteFloat("Posicao", "Z", z);
-    ini_WriteInt("Posicao", "Interior", GetPlayerInterior(playerid));
-    ini_WriteInt("Posicao", "VW", GetPlayerVirtualWorld(playerid));
-    ini_Close();
-
-    LastX[playerid] = x;
-    LastY[playerid] = y;
-    LastZ[playerid] = z;
-    LastInterior[playerid] = GetPlayerInterior(playerid);
-    LastVW[playerid] = GetPlayerVirtualWorld(playerid);
+    WriteINIString(file, "Conta", "Senha", senha);
+    WriteINIInt(file, "Conta", "Admin", PlayerAdminLevel[playerid]);
+    WriteINIFloat(file, "Posicao", "X", x);
+    WriteINIFloat(file, "Posicao", "Y", y);
+    WriteINIFloat(file, "Posicao", "Z", z);
+    WriteINIInt(file, "Posicao", "Interior", GetPlayerInterior(playerid));
+    WriteINIInt(file, "Posicao", "VW", GetPlayerVirtualWorld(playerid));
 }
 
 stock CarregarPosicao(playerid)
@@ -166,13 +120,11 @@ stock CarregarPosicao(playerid)
     new file[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    ini_Open(file);
-    LastX[playerid] = ini_ReadFloat("Posicao", "X", 0.0);
-    LastY[playerid] = ini_ReadFloat("Posicao", "Y", 0.0);
-    LastZ[playerid] = ini_ReadFloat("Posicao", "Z", 0.0);
-    LastInterior[playerid] = ini_ReadInt("Posicao", "Interior", 0);
-    LastVW[playerid] = ini_ReadInt("Posicao", "VW", 0);
-    ini_Close();
+    LastX[playerid] = ReadINIFloat(file, "Posicao", "X", 0.0);
+    LastY[playerid] = ReadINIFloat(file, "Posicao", "Y", 0.0);
+    LastZ[playerid] = ReadINIFloat(file, "Posicao", "Z", 0.0);
+    LastInterior[playerid] = ReadINIInt(file, "Posicao", "Interior", 0);
+    LastVW[playerid] = ReadINIInt(file, "Posicao", "VW", 0);
 }
 
 // =====================
@@ -180,7 +132,7 @@ stock CarregarPosicao(playerid)
 // =====================
 public OnFilterScriptInit()
 {
-    print("[CMD] Sistema de Login/Admin carregado com ini.inc");
+    print("[CMD] Sistema de Login/Admin carregado");
     return 1;
 }
 
@@ -222,7 +174,7 @@ public OnPlayerDisconnect(playerid, reason)
 // =====================
 public OnPlayerSpawn(playerid)
 {
-    if (LastX[playerid] != 0.0 || LastY[playerid] != 0.0 || LastZ[playerid] != 0.0)
+    if (LastX[playerid] != 0.0)
     {
         SetPlayerInterior(playerid, LastInterior[playerid]);
         SetPlayerVirtualWorld(playerid, LastVW[playerid]);
@@ -271,7 +223,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 }
 
 // =====================
-// ADMIN
+// COMANDO ADMIN
 // =====================
 CMD:setadmin(playerid, params[])
 {
@@ -287,39 +239,5 @@ CMD:setadmin(playerid, params[])
 
     SendClientMessage(id, COR_VERDE, "Você recebeu admin!");
     SendClientMessage(playerid, COR_VERDE, "Admin definido.");
-    return 1;
-}
-
-// =====================
-// COMANDO SALVAR POSIÇÃO
-// =====================
-CMD:savepos(playerid, params[])
-{
-    if (!Logado[playerid])
-        return SendClientMessage(playerid, COR_VERMELHO, "Você precisa estar logado para salvar sua posição.");
-
-    SalvarPosicao(playerid);
-    SendClientMessage(playerid, COR_VERDE, "Posição salva com sucesso!");
-    return 1;
-}
-
-// =====================
-// SALVAR POSIÇÃO AUTOMÁTICA
-// =====================
-public OnPlayerDeath(playerid, killerid, reason)
-{
-    SalvarPosicao(playerid);
-    return 1;
-}
-
-public OnPlayerInteriorChange(playerid, newinterior, oldinterior)
-{
-    SalvarPosicao(playerid);
-    return 1;
-}
-
-public OnPlayerVirtualWorldChange(playerid, oldworld, newworld)
-{
-    SalvarPosicao(playerid);
     return 1;
 }
