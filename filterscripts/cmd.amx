@@ -3,12 +3,14 @@
 #include <sscanf2>
 
 // ======================
-// DEFINES
+// CORES
 // ======================
-#define COR_BRANCO 0xFFFFFFFF
+#define COR_BRANCO   0xFFFFFFFF
 #define COR_VERMELHO 0xFF0000FF
-#define COR_VERDE 0x00FF00FF
-#define COR_AMARELO 0xFFFF00FF
+#define COR_VERDE    0x00FF00FF
+#define COR_AMARELO  0xFFFF00FF
+#define COR_CINZA    0xAAAAAAFF
+#define COR_ROXO     0xC2A2DAFF
 
 // ======================
 // VARIÁVEIS
@@ -20,13 +22,13 @@ new PlayerAdminLevel[MAX_PLAYERS];
 // ======================
 public OnFilterScriptInit()
 {
-    print("[CMD] Filterscript de comandos carregado com sucesso");
+    print("[CMD] Filterscript CMD + RP carregado");
     return 1;
 }
 
 public OnFilterScriptExit()
 {
-    print("[CMD] Filterscript de comandos descarregado");
+    print("[CMD] Filterscript CMD + RP descarregado");
     return 1;
 }
 
@@ -41,30 +43,65 @@ public OnPlayerConnect(playerid)
 }
 
 // ======================
-// FUNÇÕES ÚTEIS
+// FUNÇÕES
 // ======================
 stock bool:IsAdmin(playerid, level)
 {
-    if (PlayerAdminLevel[playerid] >= level) return true;
-    return false;
+    return PlayerAdminLevel[playerid] >= level;
+}
+
+// ======================
+// COMANDOS RP
+// ======================
+CMD:me(playerid, params[])
+{
+    if (isnull(params))
+        return SendClientMessage(playerid, COR_VERMELHO, "Uso: /me [ação]");
+
+    new msg[144], nome[MAX_PLAYER_NAME];
+    GetPlayerName(playerid, nome, sizeof(nome));
+    format(msg, sizeof(msg), "* %s %s", nome, params);
+    SendClientMessageToAll(COR_ROXO, msg);
+    return 1;
+}
+
+CMD:do(playerid, params[])
+{
+    if (isnull(params))
+        return SendClientMessage(playerid, COR_VERMELHO, "Uso: /do [descrição]");
+
+    new msg[144];
+    format(msg, sizeof(msg), "* %s (( %d ))", params, playerid);
+    SendClientMessageToAll(COR_CINZA, msg);
+    return 1;
+}
+
+CMD:ame(playerid, params[])
+{
+    if (isnull(params))
+        return SendClientMessage(playerid, COR_VERMELHO, "Uso: /ame [ação próxima]");
+
+    new msg[144], nome[MAX_PLAYER_NAME];
+    GetPlayerName(playerid, nome, sizeof(nome));
+    format(msg, sizeof(msg), "* %s %s", nome, params);
+    SendClientMessageToAll(COR_AMARELO, msg);
+    return 1;
 }
 
 // ======================
 // COMANDOS PLAYER
 // ======================
-
 CMD:ajuda(playerid)
 {
-    SendClientMessage(playerid, COR_AMARELO, "=== Comandos Disponíveis ===");
-    SendClientMessage(playerid, COR_BRANCO, "/hora /id /pm");
+    SendClientMessage(playerid, COR_AMARELO, "=== Comandos RP ===");
+    SendClientMessage(playerid, COR_BRANCO, "/me /do /ame /pm /hora /id");
     return 1;
 }
 
 CMD:hora(playerid)
 {
-    new h, m, s;
+    new h, m, s, str[64];
     gettime(h, m, s);
-    new str[64];
     format(str, sizeof(str), "Hora do servidor: %02d:%02d:%02d", h, m, s);
     SendClientMessage(playerid, COR_VERDE, str);
     return 1;
@@ -97,27 +134,20 @@ CMD:pm(playerid, params[])
 // ======================
 // COMANDOS ADMIN
 // ======================
-
 CMD:setadmin(playerid, params[])
 {
     if (!IsAdmin(playerid, 5))
-        return SendClientMessage(playerid, COR_VERMELHO, "Você não é administrador.");
+        return SendClientMessage(playerid, COR_VERMELHO, "Você não é administrador nível 5.");
 
     new id, level;
     if (sscanf(params, "ii", id, level))
         return SendClientMessage(playerid, COR_VERMELHO, "Uso: /setadmin [id] [nivel]");
 
-    if (!IsPlayerConnected(id))
-        return SendClientMessage(playerid, COR_VERMELHO, "Jogador não conectado.");
-
     PlayerAdminLevel[id] = level;
 
-    new str[128];
-    format(str, sizeof(str), "Você setou admin nível %d para o jogador %d.", level, id);
-    SendClientMessage(playerid, COR_VERDE, str);
-
-    format(str, sizeof(str), "Você recebeu admin nível %d.", level);
-    SendClientMessage(id, COR_VERDE, str);
+    new str[96];
+    format(str, sizeof(str), "Admin %d setou admin nível %d para %d", playerid, level, id);
+    SendClientMessageToAll(COR_VERMELHO, str);
     return 1;
 }
 
@@ -129,9 +159,6 @@ CMD:kick(playerid, params[])
     new id, motivo[64];
     if (sscanf(params, "is[64]", id, motivo))
         return SendClientMessage(playerid, COR_VERMELHO, "Uso: /kick [id] [motivo]");
-
-    if (!IsPlayerConnected(id))
-        return SendClientMessage(playerid, COR_VERMELHO, "Jogador não conectado.");
 
     new str[128];
     format(str, sizeof(str), "Admin %d kickou %d. Motivo: %s", playerid, id, motivo);
@@ -149,12 +176,9 @@ CMD:ir(playerid, params[])
     if (sscanf(params, "i", id))
         return SendClientMessage(playerid, COR_VERMELHO, "Uso: /ir [id]");
 
-    if (!IsPlayerConnected(id))
-        return SendClientMessage(playerid, COR_VERMELHO, "Jogador não conectado.");
-
-    new Float:x, Float:y, Float:z;
+    new Float:x, y, z;
     GetPlayerPos(id, x, y, z);
-    SetPlayerPos(playerid, x + 1, y, z);
+    SetPlayerPos(playerid, x + 1.0, y, z);
     return 1;
 }
 
@@ -167,11 +191,8 @@ CMD:trazer(playerid, params[])
     if (sscanf(params, "i", id))
         return SendClientMessage(playerid, COR_VERMELHO, "Uso: /trazer [id]");
 
-    if (!IsPlayerConnected(id))
-        return SendClientMessage(playerid, COR_VERMELHO, "Jogador não conectado.");
-
-    new Float:x, Float:y, Float:z;
+    new Float:x, y, z;
     GetPlayerPos(playerid, x, y, z);
-    SetPlayerPos(id, x + 1, y, z);
+    SetPlayerPos(id, x + 1.0, y, z);
     return 1;
 }
