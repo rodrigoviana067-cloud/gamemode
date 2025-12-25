@@ -10,8 +10,8 @@
 #define COR_VERDE    0x00FF00FF
 #define COR_AMARELO  0xFFFF00FF
 
-#define DIALOG_LOGIN    1
-#define DIALOG_REGISTRO 2
+#define DIALOG_LOGIN     1
+#define DIALOG_REGISTRO  2
 
 #define USER_PATH "scriptfiles/contas/%s.ini"
 
@@ -22,7 +22,7 @@ new bool:Logado[MAX_PLAYERS];
 new PlayerAdminLevel[MAX_PLAYERS];
 
 // =====================
-// FUNÇÕES DE CONTA
+// FUNÇÕES DE ARQUIVO
 // =====================
 stock GetUserFile(playerid, dest[], size)
 {
@@ -51,6 +51,7 @@ stock bool:ChecarSenha(playerid, const senha[])
 {
     new File:f;
     new file[64], linha[128];
+    new prefix[7];
     GetUserFile(playerid, file, sizeof(file));
 
     f = fopen(file, io_read);
@@ -58,10 +59,11 @@ stock bool:ChecarSenha(playerid, const senha[])
 
     while (fread(f, linha))
     {
-        if (!strncmp(linha, "Senha=", 6, true))
+        strmid(prefix, linha, 0, 6); // "Senha=" tem 6 chars
+        if (!strcmp(prefix, "Senha=", false))
         {
             new saved[64];
-            strmid(saved, linha, 6, strlen(linha)-1);
+            strmid(saved, linha, 6, strlen(linha) - 1);
             fclose(f);
             return !strcmp(saved, senha, false);
         }
@@ -74,6 +76,7 @@ stock CarregarAdmin(playerid)
 {
     new File:f;
     new file[64], linha[64];
+    new prefix[7];
     GetUserFile(playerid, file, sizeof(file));
 
     f = fopen(file, io_read);
@@ -81,7 +84,8 @@ stock CarregarAdmin(playerid)
 
     while (fread(f, linha))
     {
-        if (!strncmp(linha, "Admin=", 6, true))
+        strmid(prefix, linha, 0, 6); // "Admin="
+        if (!strcmp(prefix, "Admin=", false))
         {
             PlayerAdminLevel[playerid] = strval(linha[6]);
             break;
@@ -90,17 +94,44 @@ stock CarregarAdmin(playerid)
     fclose(f);
 }
 
+stock GetSenhaSalva(playerid, senha[], size)
+{
+    new File:f;
+    new file[64], linha[128];
+    new prefix[7];
+    GetUserFile(playerid, file, sizeof(file));
+
+    f = fopen(file, io_read);
+    if (!f) return 0;
+
+    while (fread(f, linha))
+    {
+        strmid(prefix, linha, 0, 6);
+        if (!strcmp(prefix, "Senha=", false))
+        {
+            strmid(senha, linha, 6, strlen(linha) - 1);
+            fclose(f);
+            return 1;
+        }
+    }
+    fclose(f);
+    return 0;
+}
+
 stock SalvarAdmin(playerid)
 {
     new File:f;
-    new file[64];
+    new file[64], senha[64];
     GetUserFile(playerid, file, sizeof(file));
+
+    if (!GetSenhaSalva(playerid, senha, sizeof(senha)))
+        return;
 
     f = fopen(file, io_write);
     if (!f) return;
 
-    new str[64];
-    format(str, sizeof(str), "Senha=\nAdmin=%d\n", PlayerAdminLevel[playerid]);
+    new str[128];
+    format(str, sizeof(str), "Senha=%s\nAdmin=%d\n", senha, PlayerAdminLevel[playerid]);
     fwrite(f, str);
     fclose(f);
 }
@@ -110,7 +141,7 @@ stock SalvarAdmin(playerid)
 // =====================
 public OnFilterScriptInit()
 {
-    print("[CMD] Sistema de Login/Admin carregado");
+    print("[CMD] Sistema de Login/Admin carregado com sucesso");
     return 1;
 }
 
@@ -200,7 +231,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 }
 
 // =====================
-// COMANDOS ADMIN
+// COMANDO ADMIN
 // =====================
 CMD:setadmin(playerid, params[])
 {
