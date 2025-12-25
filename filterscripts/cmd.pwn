@@ -3,16 +3,22 @@
 #include <sscanf2>
 
 // =====================
-// DEFINES
+// CORES
 // =====================
 #define COR_BRANCO   0xFFFFFFFF
 #define COR_VERMELHO 0xFF0000FF
 #define COR_VERDE    0x00FF00FF
 #define COR_AMARELO  0xFFFF00FF
 
+// =====================
+// DIALOGS
+// =====================
 #define DIALOG_LOGIN     1
 #define DIALOG_REGISTRO  2
 
+// =====================
+// PATH
+// =====================
 #define USER_PATH "scriptfiles/contas/%s.ini"
 
 // =====================
@@ -21,8 +27,14 @@
 new bool:Logado[MAX_PLAYERS];
 new PlayerAdminLevel[MAX_PLAYERS];
 
+new Float:LastX[MAX_PLAYERS];
+new Float:LastY[MAX_PLAYERS];
+new Float:LastZ[MAX_PLAYERS];
+new LastInterior[MAX_PLAYERS];
+new LastVW[MAX_PLAYERS];
+
 // =====================
-// FUNÇÕES DE ARQUIVO
+// FUNÇÕES AUX
 // =====================
 stock GetUserFile(playerid, dest[], size)
 {
@@ -31,6 +43,9 @@ stock GetUserFile(playerid, dest[], size)
     format(dest, size, USER_PATH, nome);
 }
 
+// =====================
+// REGISTRO
+// =====================
 stock RegistrarConta(playerid, const senha[])
 {
     new File:f;
@@ -40,18 +55,19 @@ stock RegistrarConta(playerid, const senha[])
     f = fopen(file, io_write);
     if (!f) return 0;
 
-    fwrite(f, "Senha=");
-    fwrite(f, senha);
-    fwrite(f, "\nAdmin=0\n");
+    fprintf(f, "Senha=%s\r\n", senha);
+    fprintf(f, "Admin=0\r\n");
     fclose(f);
     return 1;
 }
 
+// =====================
+// CHECAR SENHA
+// =====================
 stock bool:ChecarSenha(playerid, const senha[])
 {
     new File:f;
     new file[64], linha[128];
-    new prefix[7];
     GetUserFile(playerid, file, sizeof(file));
 
     f = fopen(file, io_read);
@@ -59,24 +75,25 @@ stock bool:ChecarSenha(playerid, const senha[])
 
     while (fread(f, linha))
     {
-        strmid(prefix, linha, 0, 6); // "Senha=" tem 6 chars
-        if (!strcmp(prefix, "Senha=", false))
+        if (!strncmp(linha, "Senha=", 6))
         {
             new saved[64];
             strmid(saved, linha, 6, strlen(linha) - 1);
             fclose(f);
-            return !strcmp(saved, senha, false);
+            return !strcmp(saved, senha);
         }
     }
     fclose(f);
     return false;
 }
 
+// =====================
+// ADMIN
+// =====================
 stock CarregarAdmin(playerid)
 {
     new File:f;
     new file[64], linha[64];
-    new prefix[7];
     GetUserFile(playerid, file, sizeof(file));
 
     f = fopen(file, io_read);
@@ -84,8 +101,7 @@ stock CarregarAdmin(playerid)
 
     while (fread(f, linha))
     {
-        strmid(prefix, linha, 0, 6); // "Admin="
-        if (!strcmp(prefix, "Admin=", false))
+        if (!strncmp(linha, "Admin=", 6))
         {
             PlayerAdminLevel[playerid] = strval(linha[6]);
             break;
@@ -94,11 +110,29 @@ stock CarregarAdmin(playerid)
     fclose(f);
 }
 
+stock SalvarAdmin(playerid)
+{
+    new File:f;
+    new file[64], senha[64];
+    GetUserFile(playerid, file, sizeof(file));
+
+    if (!GetSenhaSalva(playerid, senha, sizeof(senha))) return;
+
+    f = fopen(file, io_write);
+    if (!f) return;
+
+    fprintf(f, "Senha=%s\r\n", senha);
+    fprintf(f, "Admin=%d\r\n", PlayerAdminLevel[playerid]);
+    fclose(f);
+}
+
+// =====================
+// SENHA
+// =====================
 stock GetSenhaSalva(playerid, senha[], size)
 {
     new File:f;
     new file[64], linha[128];
-    new prefix[7];
     GetUserFile(playerid, file, sizeof(file));
 
     f = fopen(file, io_read);
@@ -106,8 +140,7 @@ stock GetSenhaSalva(playerid, senha[], size)
 
     while (fread(f, linha))
     {
-        strmid(prefix, linha, 0, 6);
-        if (!strcmp(prefix, "Senha=", false))
+        if (!strncmp(linha, "Senha=", 6))
         {
             strmid(senha, linha, 6, strlen(linha) - 1);
             fclose(f);
@@ -118,35 +151,65 @@ stock GetSenhaSalva(playerid, senha[], size)
     return 0;
 }
 
-stock SalvarAdmin(playerid)
+// =====================
+// POSIÇÃO
+// =====================
+stock SalvarPosicao(playerid)
 {
+    if (!Logado[playerid]) return;
+
     new File:f;
     new file[64], senha[64];
     GetUserFile(playerid, file, sizeof(file));
+    if (!GetSenhaSalva(playerid, senha, sizeof(senha))) return;
 
-    if (!GetSenhaSalva(playerid, senha, sizeof(senha)))
-        return;
+    new Float:x, Float:y, Float:z;
+    GetPlayerPos(playerid, x, y, z);
 
     f = fopen(file, io_write);
     if (!f) return;
 
-    new str[128];
-    format(str, sizeof(str), "Senha=%s\nAdmin=%d\n", senha, PlayerAdminLevel[playerid]);
-    fwrite(f, str);
+    fprintf(f, "Senha=%s\r\n", senha);
+    fprintf(f, "Admin=%d\r\n", PlayerAdminLevel[playerid]);
+    fprintf(f, "X=%f\r\nY=%f\r\nZ=%f\r\n", x, y, z);
+    fprintf(f, "Interior=%d\r\nVW=%d\r\n",
+        GetPlayerInterior(playerid),
+        GetPlayerVirtualWorld(playerid)
+    );
+    fclose(f);
+}
+
+stock CarregarPosicao(playerid)
+{
+    new File:f;
+    new file[64], linha[128];
+    GetUserFile(playerid, file, sizeof(file));
+
+    f = fopen(file, io_read);
+    if (!f) return;
+
+    while (fread(f, linha))
+    {
+        if (!strncmp(linha, "X=", 2)) LastX[playerid] = floatstr(linha[2]);
+        else if (!strncmp(linha, "Y=", 2)) LastY[playerid] = floatstr(linha[2]);
+        else if (!strncmp(linha, "Z=", 2)) LastZ[playerid] = floatstr(linha[2]);
+        else if (!strncmp(linha, "Interior=", 9)) LastInterior[playerid] = strval(linha[9]);
+        else if (!strncmp(linha, "VW=", 3)) LastVW[playerid] = strval(linha[3]);
+    }
     fclose(f);
 }
 
 // =====================
-// FILTERSCRIPT INIT
+// FILTERSCRIPT
 // =====================
 public OnFilterScriptInit()
 {
-    print("[CMD] Sistema de Login/Admin carregado com sucesso");
+    print("[CMD] Sistema de Login/Admin carregado");
     return 1;
 }
 
 // =====================
-// PLAYER CONNECT
+// CONNECT
 // =====================
 public OnPlayerConnect(playerid)
 {
@@ -158,33 +221,46 @@ public OnPlayerConnect(playerid)
 
     if (fexist(file))
     {
-        ShowPlayerDialog(
-            playerid,
-            DIALOG_LOGIN,
-            DIALOG_STYLE_PASSWORD,
-            "Login",
-            "Digite sua senha:",
-            "Entrar",
-            "Sair"
-        );
+        ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
+            "Login", "Digite sua senha:", "Entrar", "Sair");
     }
     else
     {
-        ShowPlayerDialog(
-            playerid,
-            DIALOG_REGISTRO,
-            DIALOG_STYLE_PASSWORD,
-            "Registro",
-            "Crie uma senha:",
-            "Registrar",
-            "Sair"
-        );
+        ShowPlayerDialog(playerid, DIALOG_REGISTRO, DIALOG_STYLE_PASSWORD,
+            "Registro", "Crie uma senha:", "Registrar", "Sair");
     }
     return 1;
 }
 
 // =====================
-// DIALOG RESPONSE
+// DISCONNECT
+// =====================
+public OnPlayerDisconnect(playerid, reason)
+{
+    SalvarPosicao(playerid);
+    return 1;
+}
+
+// =====================
+// SPAWN
+// =====================
+public OnPlayerSpawn(playerid)
+{
+    if (LastX[playerid] != 0.0)
+    {
+        SetPlayerInterior(playerid, LastInterior[playerid]);
+        SetPlayerVirtualWorld(playerid, LastVW[playerid]);
+        SetPlayerPos(playerid, LastX[playerid], LastY[playerid], LastZ[playerid]);
+    }
+    else
+    {
+        SetPlayerPos(playerid, 1529.6, -1691.2, 13.3);
+    }
+    return 1;
+}
+
+// =====================
+// DIALOG
 // =====================
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
@@ -193,41 +269,29 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if (dialogid == DIALOG_REGISTRO)
     {
         if (strlen(inputtext) < 3)
-        {
-            ShowPlayerDialog(
-                playerid,
-                DIALOG_REGISTRO,
-                DIALOG_STYLE_PASSWORD,
-                "Registro",
-                "Senha muito curta (mínimo 3 caracteres).",
-                "Registrar",
-                "Sair"
-            );
-            return 1;
-        }
+            return ShowPlayerDialog(playerid, DIALOG_REGISTRO, DIALOG_STYLE_PASSWORD,
+                "Registro", "Senha muito curta!", "Registrar", "Sair");
 
         RegistrarConta(playerid, inputtext);
         Logado[playerid] = true;
-
-        SendClientMessage(playerid, COR_VERDE, "Conta registrada com sucesso!");
+        SpawnPlayer(playerid);
+        SendClientMessage(playerid, COR_VERDE, "Conta criada com sucesso!");
         return 1;
     }
 
     if (dialogid == DIALOG_LOGIN)
     {
         if (!ChecarSenha(playerid, inputtext))
-        {
-            SendClientMessage(playerid, COR_VERMELHO, "Senha incorreta.");
             return Kick(playerid);
-        }
 
         Logado[playerid] = true;
         CarregarAdmin(playerid);
-
-        SendClientMessage(playerid, COR_VERDE, "Login efetuado com sucesso!");
+        CarregarPosicao(playerid);
+        SpawnPlayer(playerid);
+        SendClientMessage(playerid, COR_VERDE, "Login efetuado!");
         return 1;
     }
-    return 0;
+    return 1;
 }
 
 // =====================
@@ -236,19 +300,16 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 CMD:setadmin(playerid, params[])
 {
     if (PlayerAdminLevel[playerid] < 5)
-        return SendClientMessage(playerid, COR_VERMELHO, "Você não tem permissão.");
+        return SendClientMessage(playerid, COR_VERMELHO, "Sem permissão.");
 
     new id, nivel;
     if (sscanf(params, "ii", id, nivel))
-        return SendClientMessage(playerid, COR_AMARELO, "Uso: /setadmin [id] [nivel]");
-
-    if (!IsPlayerConnected(id))
-        return SendClientMessage(playerid, COR_VERMELHO, "Jogador não conectado.");
+        return SendClientMessage(playerid, COR_AMARELO, "/setadmin [id] [nivel]");
 
     PlayerAdminLevel[id] = nivel;
     SalvarAdmin(id);
 
     SendClientMessage(id, COR_VERDE, "Você recebeu admin!");
-    SendClientMessage(playerid, COR_VERDE, "Admin definido com sucesso.");
+    SendClientMessage(playerid, COR_VERDE, "Admin definido.");
     return 1;
 }
