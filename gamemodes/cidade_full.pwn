@@ -1,6 +1,4 @@
 #include <a_samp>
-#include <zcmd>
-#include <sscanf2>
 
 forward OnGameModeInit();
 forward OnPlayerConnect(playerid);
