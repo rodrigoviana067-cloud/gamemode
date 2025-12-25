@@ -1,6 +1,7 @@
 #include <a_samp>
 #include <zcmd>
 #include <sscanf2>
+#include <ini> // <<< aqui usamos o ini.inc
 
 // =====================
 // CORES
@@ -59,19 +60,14 @@ stock GetUserFile(playerid, dest[], size)
 // =====================
 stock RegistrarConta(playerid, const senha[])
 {
-    new file[64], f;
+    new file[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    f = OpenFile(file, io_write);
-    if (f == 0) return 0;
+    ini_Open(file);
+    ini_WriteString("Conta", "Senha", senha);
+    ini_WriteInt("Conta", "Admin", 0);
+    ini_Close();
 
-    WriteFile(f, "Senha=");
-    WriteFile(f, senha);
-    WriteFile(f, "\r\n");
-
-    WriteFile(f, "Admin=0\r\n");
-
-    CloseFile(f);
     return 1;
 }
 
@@ -80,24 +76,14 @@ stock RegistrarConta(playerid, const senha[])
 // =====================
 stock bool:ChecarSenha(playerid, const senha[])
 {
-    new file[64], f, linha[128];
+    new file[64], saved[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    f = OpenFile(file, io_read);
-    if (f == 0) return false;
+    ini_Open(file);
+    ini_ReadString("Conta", "Senha", "", saved, sizeof(saved));
+    ini_Close();
 
-    while(ReadFileLine(f, linha, sizeof(linha)))
-    {
-        if (strn_cmp(linha, "Senha=", 6))
-        {
-            new saved[64];
-            strmid(saved, linha, 6, strlen(linha)-1);
-            CloseFile(f);
-            return !strcmp(saved, senha);
-        }
-    }
-    CloseFile(f);
-    return false;
+    return !strcmp(saved, senha);
 }
 
 // =====================
@@ -105,42 +91,26 @@ stock bool:ChecarSenha(playerid, const senha[])
 // =====================
 stock CarregarAdmin(playerid)
 {
-    new file[64], f, linha[64];
+    new file[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    f = OpenFile(file, io_read);
-    if (f == 0) return;
-
-    while(ReadFileLine(f, linha, sizeof(linha)))
-    {
-        if (strn_cmp(linha, "Admin=", 6))
-        {
-            PlayerAdminLevel[playerid] = strval(linha[6]);
-            break;
-        }
-    }
-    CloseFile(f);
+    ini_Open(file);
+    PlayerAdminLevel[playerid] = ini_ReadInt("Conta", "Admin", 0);
+    ini_Close();
 }
 
 stock SalvarAdmin(playerid)
 {
-    new file[64], f, senha[64];
+    new file[64];
     GetUserFile(playerid, file, sizeof(file));
 
+    new senha[64];
     if (!GetSenhaSalva(playerid, senha, sizeof(senha))) return;
 
-    f = OpenFile(file, io_write);
-    if (f == 0) return;
-
-    WriteFile(f, "Senha=");
-    WriteFile(f, senha);
-    WriteFile(f, "\r\n");
-
-    new buffer[32];
-    format(buffer, sizeof(buffer), "Admin=%d\r\n", PlayerAdminLevel[playerid]);
-    WriteFile(f, buffer);
-
-    CloseFile(f);
+    ini_Open(file);
+    ini_WriteString("Conta", "Senha", senha);
+    ini_WriteInt("Conta", "Admin", PlayerAdminLevel[playerid]);
+    ini_Close();
 }
 
 // =====================
@@ -148,23 +118,14 @@ stock SalvarAdmin(playerid)
 // =====================
 stock GetSenhaSalva(playerid, senha[], size)
 {
-    new file[64], f, linha[128];
+    new file[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    f = OpenFile(file, io_read);
-    if (f == 0) return 0;
+    ini_Open(file);
+    ini_ReadString("Conta", "Senha", "", senha, size);
+    ini_Close();
 
-    while(ReadFileLine(f, linha, sizeof(linha)))
-    {
-        if (strn_cmp(linha, "Senha=", 6))
-        {
-            strmid(senha, linha, 6, strlen(linha)-1);
-            CloseFile(f);
-            return 1;
-        }
-    }
-    CloseFile(f);
-    return 0;
+    return strlen(senha) > 0;
 }
 
 // =====================
@@ -174,35 +135,25 @@ stock SalvarPosicao(playerid)
 {
     if (!Logado[playerid]) return;
 
-    new file[64], f, senha[64];
+    new file[64];
     GetUserFile(playerid, file, sizeof(file));
+
+    new senha[64];
     if (!GetSenhaSalva(playerid, senha, sizeof(senha))) return;
 
     new Float:x, Float:y, Float:z;
     GetPlayerPos(playerid, x, y, z);
 
-    f = OpenFile(file, io_write);
-    if (f == 0) return;
+    ini_Open(file);
+    ini_WriteString("Conta", "Senha", senha);
+    ini_WriteInt("Conta", "Admin", PlayerAdminLevel[playerid]);
+    ini_WriteFloat("Posicao", "X", x);
+    ini_WriteFloat("Posicao", "Y", y);
+    ini_WriteFloat("Posicao", "Z", z);
+    ini_WriteInt("Posicao", "Interior", GetPlayerInterior(playerid));
+    ini_WriteInt("Posicao", "VW", GetPlayerVirtualWorld(playerid));
+    ini_Close();
 
-    WriteFile(f, "Senha=");
-    WriteFile(f, senha);
-    WriteFile(f, "\r\n");
-
-    new buffer[32];
-    format(buffer, sizeof(buffer), "Admin=%d\r\n", PlayerAdminLevel[playerid]);
-    WriteFile(f, buffer);
-
-    format(buffer, sizeof(buffer), "X=%f\r\nY=%f\r\nZ=%f\r\n", x, y, z);
-    WriteFile(f, buffer);
-
-    format(buffer, sizeof(buffer), "Interior=%d\r\nVW=%d\r\n",
-        GetPlayerInterior(playerid),
-        GetPlayerVirtualWorld(playerid));
-    WriteFile(f, buffer);
-
-    CloseFile(f);
-
-    // Atualiza variáveis do servidor
     LastX[playerid] = x;
     LastY[playerid] = y;
     LastZ[playerid] = z;
@@ -212,21 +163,16 @@ stock SalvarPosicao(playerid)
 
 stock CarregarPosicao(playerid)
 {
-    new file[64], f, linha[128];
+    new file[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    f = OpenFile(file, io_read);
-    if (f == 0) return;
-
-    while(ReadFileLine(f, linha, sizeof(linha)))
-    {
-        if (strn_cmp(linha, "X=", 2)) LastX[playerid] = floatstr(linha[2]);
-        else if (strn_cmp(linha, "Y=", 2)) LastY[playerid] = floatstr(linha[2]);
-        else if (strn_cmp(linha, "Z=", 2)) LastZ[playerid] = floatstr(linha[2]);
-        else if (strn_cmp(linha, "Interior=", 9)) LastInterior[playerid] = strval(linha[9]);
-        else if (strn_cmp(linha, "VW=", 3)) LastVW[playerid] = strval(linha[3]);
-    }
-    CloseFile(f);
+    ini_Open(file);
+    LastX[playerid] = ini_ReadFloat("Posicao", "X", 0.0);
+    LastY[playerid] = ini_ReadFloat("Posicao", "Y", 0.0);
+    LastZ[playerid] = ini_ReadFloat("Posicao", "Z", 0.0);
+    LastInterior[playerid] = ini_ReadInt("Posicao", "Interior", 0);
+    LastVW[playerid] = ini_ReadInt("Posicao", "VW", 0);
+    ini_Close();
 }
 
 // =====================
@@ -234,7 +180,7 @@ stock CarregarPosicao(playerid)
 // =====================
 public OnFilterScriptInit()
 {
-    print("[CMD] Sistema de Login/Admin carregado");
+    print("[CMD] Sistema de Login/Admin carregado com ini.inc");
     return 1;
 }
 
