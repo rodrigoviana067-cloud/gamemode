@@ -1,3 +1,4 @@
+new PlayerAdminLevel[MAX_PLAYERS];
 #include <a_samp>
 #include <zcmd>
 #include <sscanf2>
@@ -152,12 +153,6 @@ public OnFilterScriptInit()
 {
     CarregarCasas();
     print("[CASAS] Sistema carregado");
-    return 1;
-}
-
-public OnFilterScriptInit()
-{
-    print("[CMD] Login/Admin carregado com sucesso");
     return 1;
 }
 
