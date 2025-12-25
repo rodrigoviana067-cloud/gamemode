@@ -1,7 +1,6 @@
 #include <a_samp>
 #include <zcmd>
 #include <sscanf2>
-#include <fileio>
 
 // ======================
 // CORES
