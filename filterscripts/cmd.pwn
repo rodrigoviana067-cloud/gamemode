@@ -3,29 +3,30 @@
 #include <sscanf2>
 #include <dini>
 
-// =====================
+// =======================
 // CORES
-// =====================
-#define COR_BRANCO   0xFFFFFFFF
-#define COR_VERMELHO 0xFF0000FF
-#define COR_VERDE    0x00FF00FF
-#define COR_AMARELO  0xFFFF00FF
+// =======================
+#define COR_BRANCO    0xFFFFFFFF
+#define COR_VERMELHO  0xFF0000FF
+#define COR_VERDE     0x00FF00FF
+#define COR_AMARELO   0xFFFF00FF
 
-// =====================
+// =======================
 // DIALOGS
-// =====================
+// =======================
 #define DIALOG_LOGIN     1
 #define DIALOG_REGISTRO  2
 
-// =====================
-// PATHS
-// =====================
-#define USER_PATH "scriptfiles/contas/%s.ini"
-#define HOUSE_PATH "scriptfiles/casas/%d.ini"
+// =======================
+// PATH
+// =======================
+#define USER_PATH   "scriptfiles/contas/%s.ini"
+#define CASA_PATH   "scriptfiles/casas/%d.ini"
+#define PLAYER_PATH "scriptfiles/players/%s.ini"
 
-// =====================
+// =======================
 // VARIÁVEIS
-// =====================
+// =======================
 new bool:Logado[MAX_PLAYERS];
 new PlayerAdminLevel[MAX_PLAYERS];
 
@@ -35,9 +36,13 @@ new Float:LastZ[MAX_PLAYERS];
 new LastInterior[MAX_PLAYERS];
 new LastVW[MAX_PLAYERS];
 
-// =====================
-// AUXILIARES
-// =====================
+new PlayerCasa[MAX_PLAYERS];
+new CasaPickup[1000];
+new Text3D:CasaLabel[1000];
+
+// =======================
+// FUNÇÕES AUXILIARES
+// =======================
 stock GetUserFile(playerid, dest[], size)
 {
     new nome[MAX_PLAYER_NAME];
@@ -45,22 +50,14 @@ stock GetUserFile(playerid, dest[], size)
     format(dest, size, USER_PATH, nome);
 }
 
-stock GetHouseFile(houseid, dest[], size)
-{
-    format(dest, size, HOUSE_PATH, houseid);
-}
-
-// =====================
-// CONTA
-// =====================
 stock RegistrarConta(playerid, const senha[])
 {
     new file[64];
     GetUserFile(playerid, file, sizeof(file));
 
     dini_Create(file);
-    dini_Set(file, "Conta", "Senha", senha);
-    dini_IntSet(file, "Conta", "Admin", 0);
+    dini_Set(file, "Senha", senha);
+    dini_IntSet(file, "Admin", 0);
 
     return 1;
 }
@@ -70,7 +67,7 @@ stock bool:ChecarSenha(playerid, const senha[])
     new file[64], saved[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    dini_Get(file, "Conta", "Senha", saved, sizeof(saved));
+    dini_Get(file, "Senha", saved);
     return strcmp(saved, senha) == 0;
 }
 
@@ -79,7 +76,7 @@ stock CarregarAdmin(playerid)
     new file[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    PlayerAdminLevel[playerid] = dini_Int(file, "Conta", "Admin");
+    PlayerAdminLevel[playerid] = dini_Int(file, "Admin");
 }
 
 stock SalvarAdmin(playerid)
@@ -87,14 +84,14 @@ stock SalvarAdmin(playerid)
     new file[64], senha[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    dini_Get(file, "Conta", "Senha", senha, sizeof(senha));
-    dini_Set(file, "Conta", "Senha", senha);
-    dini_IntSet(file, "Conta", "Admin", PlayerAdminLevel[playerid]);
+    dini_Get(file, "Senha", senha);
+    dini_Set(file, "Senha", senha);
+    dini_IntSet(file, "Admin", PlayerAdminLevel[playerid]);
 }
 
-// =====================
+// =======================
 // POSIÇÃO
-// =====================
+// =======================
 stock SalvarPosicao(playerid)
 {
     if (!Logado[playerid]) return;
@@ -102,18 +99,18 @@ stock SalvarPosicao(playerid)
     new file[64], senha[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    dini_Get(file, "Conta", "Senha", senha, sizeof(senha));
+    dini_Get(file, "Senha", senha);
 
     new Float:x, y, z;
     GetPlayerPos(playerid, x, y, z);
 
-    dini_Set(file, "Conta", "Senha", senha);
-    dini_IntSet(file, "Conta", "Admin", PlayerAdminLevel[playerid]);
-    dini_FloatSet(file, "Posicao_X", "X", x);
-    dini_FloatSet(file, "Posicao_Y", "Y", y);
-    dini_FloatSet(file, "Posicao_Z", "Z", z);
-    dini_IntSet(file, "Posicao", "Interior", GetPlayerInterior(playerid));
-    dini_IntSet(file, "Posicao", "VW", GetPlayerVirtualWorld(playerid));
+    dini_Set(file, "Senha", senha);
+    dini_IntSet(file, "Admin", PlayerAdminLevel[playerid]);
+    dini_FloatSet(file, "X", x);
+    dini_FloatSet(file, "Y", y);
+    dini_FloatSet(file, "Z", z);
+    dini_IntSet(file, "Interior", GetPlayerInterior(playerid));
+    dini_IntSet(file, "VW", GetPlayerVirtualWorld(playerid));
 }
 
 stock CarregarPosicao(playerid)
@@ -121,29 +118,95 @@ stock CarregarPosicao(playerid)
     new file[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    LastX[playerid] = dini_Float(file, "Posicao_X");
-    LastY[playerid] = dini_Float(file, "Posicao_Y");
-    LastZ[playerid] = dini_Float(file, "Posicao_Z");
-    LastInterior[playerid] = dini_Int(file, "Posicao", "Interior");
-    LastVW[playerid] = dini_Int(file, "Posicao", "VW");
+    LastX[playerid] = dini_Float(file, "X");
+    LastY[playerid] = dini_Float(file, "Y");
+    LastZ[playerid] = dini_Float(file, "Z");
+    LastInterior[playerid] = dini_Int(file, "Interior");
+    LastVW[playerid] = dini_Int(file, "VW");
 }
 
-// =====================
-// FILTERSCRIPT
-// =====================
-public OnFilterScriptInit()
+// =======================
+// SISTEMA DE CASAS
+// =======================
+stock CriarLabelCasa(id)
 {
-    print("[CMD] Sistema de Login/Admin e Casas carregado");
+    new file[64], texto[128];
+    format(file, sizeof(file), CASA_PATH, id);
+
+    if (!dini_Exists(file)) return 0;
+
+    format(texto, sizeof(texto),
+        "{FFFFFF}Casa ID: {00FF00}%d\n{FFFFFF}Preco: {00FF00}$%d\n{FFFFFF}/entrarcasa %d",
+        id,
+        dini_Int(file, "Preco"),
+        id
+    );
+
+    CasaLabel[id] = Create3DTextLabel(
+        texto, COR_VERDE,
+        dini_Float(file, "X"),
+        dini_Float(file, "Y"),
+        dini_Float(file, "Z"),
+        15.0, 0, 1
+    );
+
+    CasaPickup[id] = CreatePickup(
+        1273, 1,
+        dini_Float(file, "X"),
+        dini_Float(file, "Y"),
+        dini_Float(file, "Z"),
+        -1
+    );
     return 1;
 }
 
-// =====================
-// CONNECT / SPAWN / DISCONNECT
-// =====================
+stock SalvarPlayer(playerid)
+{
+    new nome[MAX_PLAYER_NAME], file[64];
+    GetPlayerName(playerid, nome, sizeof(nome));
+    format(file, sizeof(file), PLAYER_PATH, nome);
+
+    dini_IntSet(file, "Casa", PlayerCasa[playerid]);
+    return 1;
+}
+
+stock CarregarPlayer(playerid)
+{
+    new nome[MAX_PLAYER_NAME], file[64];
+    GetPlayerName(playerid, nome, sizeof(nome));
+    format(file, sizeof(file), PLAYER_PATH, nome);
+
+    if (!dini_Exists(file))
+    {
+        dini_Create(file);
+        dini_IntSet(file, "Casa", -1);
+    }
+
+    PlayerCasa[playerid] = dini_Int(file, "Casa");
+    return 1;
+}
+
+// =======================
+// FILTERSCRIPT INIT
+// =======================
+public OnFilterScriptInit()
+{
+    print("[SYSTEM] Login/Admin e Casas carregados");
+    for (new i = 1; i < 1000; i++)
+        CriarLabelCasa(i);
+    return 1;
+}
+
+// =======================
+// CONNECT/DISCONNECT
+// =======================
 public OnPlayerConnect(playerid)
 {
     Logado[playerid] = false;
     PlayerAdminLevel[playerid] = 0;
+    PlayerCasa[playerid] = -1;
+
+    CarregarPlayer(playerid);
 
     new file[64];
     GetUserFile(playerid, file, sizeof(file));
@@ -161,6 +224,16 @@ public OnPlayerConnect(playerid)
     return 1;
 }
 
+public OnPlayerDisconnect(playerid, reason)
+{
+    SalvarPosicao(playerid);
+    SalvarPlayer(playerid);
+    return 1;
+}
+
+// =======================
+// SPAWN
+// =======================
 public OnPlayerSpawn(playerid)
 {
     if (LastX[playerid] != 0.0)
@@ -176,15 +249,9 @@ public OnPlayerSpawn(playerid)
     return 1;
 }
 
-public OnPlayerDisconnect(playerid, reason)
-{
-    SalvarPosicao(playerid);
-    return 1;
-}
-
-// =====================
+// =======================
 // DIALOG
-// =====================
+// =======================
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
     if (!response) return Kick(playerid);
@@ -217,9 +284,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     return 1;
 }
 
-// =====================
-// ADMIN
-// =====================
+// =======================
+// COMANDOS ADMIN
+// =======================
 CMD:setadmin(playerid, params[])
 {
     if (PlayerAdminLevel[playerid] < 5)
@@ -237,59 +304,117 @@ CMD:setadmin(playerid, params[])
     return 1;
 }
 
-// =====================
-// CASAS
-// =====================
-CMD:comprarhouse(playerid, params[])
+// =======================
+// COMANDOS CASAS
+// =======================
+CMD:criarcasa(playerid, params[])
 {
-    if (!Logado[playerid]) return 0;
+    if (PlayerAdminLevel[playerid] < 5)
+        return SendClientMessage(playerid, COR_VERMELHO, "Sem permissão.");
 
-    new houseid;
-    if (sscanf(params, "i", houseid))
-        return SendClientMessage(playerid, COR_AMARELO, "/comprarhouse [id]");
+    new preco, interior;
+    if (sscanf(params, "ii", preco, interior))
+        return SendClientMessage(playerid, COR_AMARELO, "/criarcasa [preco] [interior]");
 
-    new file[64];
-    GetHouseFile(houseid, file, sizeof(file));
-
-    if (!dini_Exists(file))
+    new id = 1, file[64];
+    while (true)
     {
-        dini_Create(file);
-        dini_IntSet(file, "Casa", "DonoID", playerid);
-        SendClientMessage(playerid, COR_VERDE, "Casa comprada com sucesso!");
+        format(file, sizeof(file), CASA_PATH, id);
+        if (!dini_Exists(file)) break;
+        id++;
     }
-    else
-    {
-        SendClientMessage(playerid, COR_VERMELHO, "Esta casa já está ocupada!");
-    }
+
+    new Float:x, y, z;
+    GetPlayerPos(playerid, x, y, z);
+
+    dini_Create(file);
+    dini_IntSet(file, "Dono", -1);
+    dini_IntSet(file, "Preco", preco);
+    dini_IntSet(file, "Interior", interior);
+    dini_IntSet(file, "Trancada", 0);
+    dini_IntSet(file, "VW", id);
+
+    dini_FloatSet(file, "X", x);
+    dini_FloatSet(file, "Y", y);
+    dini_FloatSet(file, "Z", z);
+
+    CriarLabelCasa(id);
+    SendClientMessage(playerid, COR_VERDE, "Casa criada.");
     return 1;
 }
 
-CMD:entrarhouse(playerid, params[])
+CMD:comprarcasa(playerid, params[])
 {
-    if (!Logado[playerid]) return 0;
+    new id, file[64];
+    if (sscanf(params, "i", id)) return 0;
 
-    new houseid;
-    if (sscanf(params, "i", houseid))
-        return SendClientMessage(playerid, COR_AMARELO, "/entrarhouse [id]");
+    format(file, sizeof(file), CASA_PATH, id);
 
-    new file[64];
-    GetHouseFile(houseid, file, sizeof(file));
+    if (dini_Int(file, "Dono") != -1)
+        return SendClientMessage(playerid, COR_VERMELHO, "Casa ja tem dono.");
 
-    if (!dini_Exists(file))
-    {
-        SendClientMessage(playerid, COR_VERMELHO, "Esta casa não existe!");
-        return 1;
-    }
+    new preco = dini_Int(file, "Preco");
+    if (GetPlayerMoney(playerid) < preco)
+        return SendClientMessage(playerid, COR_VERMELHO, "Dinheiro insuficiente.");
 
-    new donoID = dini_Int(file, "Casa", "DonoID");
-    if (donoID != playerid && PlayerAdminLevel[playerid] < 5)
-    {
-        SendClientMessage(playerid, COR_VERMELHO, "Você não é o dono desta casa!");
-        return 1;
-    }
+    TakePlayerMoney(playerid, preco);
+    dini_IntSet(file, "Dono", playerid);
+    PlayerCasa[playerid] = id;
 
-    // Teleport dentro da casa
-    SetPlayerPos(playerid, 2000.0, 2000.0, 10.0); // Exemplo, mude as coordenadas
-    SendClientMessage(playerid, COR_VERDE, "Bem-vindo à sua casa!");
+    SendClientMessage(playerid, COR_VERDE, "Casa comprada.");
+    return 1;
+}
+
+CMD:entrarcasa(playerid, params[])
+{
+    new id, file[64];
+    if (sscanf(params, "i", id)) return 0;
+
+    format(file, sizeof(file), CASA_PATH, id);
+
+    if (dini_Int(file, "Trancada") == 1 && dini_Int(file, "Dono") != playerid)
+        return SendClientMessage(playerid, COR_VERMELHO, "Casa trancada.");
+
+    SetPlayerInterior(playerid, dini_Int(file, "Interior"));
+    SetPlayerVirtualWorld(playerid, dini_Int(file, "VW"));
+    SetPlayerPos(playerid, 223.0, 1287.0, 1082.1);
+
+    return 1;
+}
+
+CMD:saircasa(playerid, params[])
+{
+    SetPlayerInterior(playerid, 0);
+    SetPlayerVirtualWorld(playerid, 0);
+    SetPlayerPos(playerid, 1529.6, -1691.2, 13.3);
+    return 1;
+}
+
+CMD:trancar(playerid, params[])
+{
+    new id = PlayerCasa[playerid], file[64];
+    if (id == -1) return 0;
+
+    format(file, sizeof(file), CASA_PATH, id);
+
+    new estado = dini_Int(file, "Trancada");
+    dini_IntSet(file, "Trancada", !estado);
+
+    SendClientMessage(playerid, COR_VERDE, estado ? "Casa destrancada." : "Casa trancada.");
+    return 1;
+}
+
+CMD:vendercasa(playerid, params[])
+{
+    new id = PlayerCasa[playerid], file[64];
+    if (id == -1) return 0;
+
+    format(file, sizeof(file), CASA_PATH, id);
+
+    GivePlayerMoney(playerid, dini_Int(file, "Preco") / 2);
+    dini_IntSet(file, "Dono", -1);
+    PlayerCasa[playerid] = -1;
+
+    SendClientMessage(playerid, COR_VERDE, "Casa vendida.");
     return 1;
 }
