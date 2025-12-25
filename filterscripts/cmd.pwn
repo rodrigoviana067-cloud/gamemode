@@ -1,311 +1,257 @@
 #include <a_samp>
 #include <zcmd>
 #include <sscanf2>
-#include <string>
-#include <float>
-#include <file>
+#include <dini>
 #include <streamer>
-#include "dini.inc"
 
-// =====================
-// CORES
-// =====================
-#define COR_BRANCO   0xFFFFFFFF
+#define MAX_HOUSES 500
+
+#define COR_VERDE   0x00FF00FF
 #define COR_VERMELHO 0xFF0000FF
-#define COR_VERDE    0x00FF00FF
-#define COR_AMARELO  0xFFFF00FF
+#define COR_BRANCO  0xFFFFFFFF
+#define COR_AMARELO 0xFFFF00FF
 
-// =====================
-// DIALOGS
-// =====================
-#define DIALOG_LOGIN     1
-#define DIALOG_REGISTRO  2
-
-// =====================
-// PATH
-// =====================
+// ================= LOGIN =================
+#define DIALOG_LOGIN    1
+#define DIALOG_REGISTER 2
 #define USER_PATH "scriptfiles/contas/%s.ini"
-#define HOUSE_PATH "scriptfiles/casas/%d.ini"
 
-// =====================
-// VARIÁVEIS
-// =====================
 new bool:Logado[MAX_PLAYERS];
 new PlayerAdminLevel[MAX_PLAYERS];
+new UltimaCasa[MAX_PLAYERS];
 
-new LastX[MAX_PLAYERS];
-new LastY[MAX_PLAYERS];
-new LastZ[MAX_PLAYERS];
-new LastInterior[MAX_PLAYERS];
-new LastVW[MAX_PLAYERS];
+// ================= CASAS =================
+new bool:HouseExists[MAX_HOUSES];
+new HouseOwner[MAX_HOUSES];
+new Float:HouseX[MAX_HOUSES];
+new Float:HouseY[MAX_HOUSES];
+new Float:HouseZ[MAX_HOUSES];
+new Float:HouseIX[MAX_HOUSES];
+new Float:HouseIY[MAX_HOUSES];
+new Float:HouseIZ[MAX_HOUSES];
+new HouseInterior[MAX_HOUSES];
+new HousePrice[MAX_HOUSES];
+new HouseLocked[MAX_HOUSES];
 
-new PlayerHouse[MAX_PLAYERS]; // ID da casa que o player está
-new HouseLocked[100];          // Trancada ou não
-new HousePrice[100];           // Preço da casa
-new HousePickup[100];          // Pickup da porta
-new House3DLabel[100];         // 3DTextLabel da porta
+new HousePickup[MAX_HOUSES];
+new Text3D:HouseLabel[MAX_HOUSES];
 
-// =====================
-// AUXILIAR
-// =====================
+// ================= FUNÇÕES =================
 stock GetUserFile(playerid, dest[], size)
 {
     new nome[MAX_PLAYER_NAME];
-    GetPlayerName(playerid, nome, sizeof(nome));
+    GetPlayerName(playerid, nome, sizeof nome);
     format(dest, size, USER_PATH, nome);
 }
 
 stock GetHouseFile(houseid, dest[], size)
 {
-    format(dest, size, HOUSE_PATH, houseid);
+    format(dest, size, "scriptfiles/houses/%d.ini", houseid);
 }
 
-// =====================
-// REGISTRO / LOGIN
-// =====================
-stock RegistrarConta(playerid, const senha[])
+// ================= LOGIN =================
+stock Registrar(playerid, senha[])
 {
     new file[64];
-    GetUserFile(playerid, file, sizeof(file));
-
-    dini_Set(file, "Conta:Senha", senha);
-    dini_IntSet(file, "Conta:Admin", 0);
-
-    return 1;
+    GetUserFile(playerid, file, sizeof file);
+    dini_Create(file);
+    dini_Set(file, "Senha", senha);
+    dini_IntSet(file, "Admin", 0);
 }
 
-stock bool:ChecarSenha(playerid, const senha[])
+stock bool:ChecarSenha(playerid, senha[])
 {
     new file[64], saved[64];
-    GetUserFile(playerid, file, sizeof(file));
-    strcpy(saved, dini_Get(file, "Conta:Senha"));
-    return strcmp(saved, senha) == 0;
+    GetUserFile(playerid, file, sizeof file);
+    format(saved, sizeof saved, "%s", dini_Get(file, "Senha"));
+    return !strcmp(saved, senha);
 }
 
-stock CarregarAdmin(playerid)
+// ================= CASAS =================
+stock AtualizarCasa(h)
+{
+    if (!HouseExists[h]) return;
+
+    new texto[128];
+    if (HouseOwner[h] == -1)
+        format(texto, sizeof texto, "Casa %d\nPreço: $%d\n/use /buyhouse", h, HousePrice[h]);
+    else
+        format(texto, sizeof texto, "Casa %d\n/use /enterhouse", h);
+
+    SetDynamic3DTextLabelText(HouseLabel[h], COR_VERDE, texto);
+}
+
+stock CriarCasa(h)
+{
+    HousePickup[h] = CreateDynamicPickup(1273, 1, HouseX[h], HouseY[h], HouseZ[h]);
+    HouseLabel[h] = CreateDynamic3DTextLabel("Casa", COR_VERDE,
+        HouseX[h], HouseY[h], HouseZ[h] + 1.0, 15.0);
+    AtualizarCasa(h);
+}
+
+stock SalvarCasa(h)
 {
     new file[64];
-    GetUserFile(playerid, file, sizeof(file));
-    PlayerAdminLevel[playerid] = dini_Int(file, "Conta:Admin");
+    GetHouseFile(h, file, sizeof file);
+
+    dini_Create(file);
+    dini_IntSet(file, "Owner", HouseOwner[h]);
+    dini_IntSet(file, "Price", HousePrice[h]);
+    dini_IntSet(file, "Locked", HouseLocked[h]);
+    dini_FloatSet(file, "X", HouseX[h]);
+    dini_FloatSet(file, "Y", HouseY[h]);
+    dini_FloatSet(file, "Z", HouseZ[h]);
+    dini_FloatSet(file, "IX", HouseIX[h]);
+    dini_FloatSet(file, "IY", HouseIY[h]);
+    dini_FloatSet(file, "IZ", HouseIZ[h]);
+    dini_IntSet(file, "Interior", HouseInterior[h]);
 }
 
-stock SalvarAdmin(playerid)
+stock CarregarCasas()
 {
-    new file[64];
-    GetUserFile(playerid, file, sizeof(file));
-    dini_IntSet(file, "Conta:Admin", PlayerAdminLevel[playerid]);
+    for (new i; i < MAX_HOUSES; i++)
+    {
+        new file[64];
+        GetHouseFile(i, file, sizeof file);
+        if (!dini_Exists(file)) continue;
+
+        HouseExists[i] = true;
+        HouseOwner[i] = dini_Int(file, "Owner");
+        HousePrice[i] = dini_Int(file, "Price");
+        HouseLocked[i] = dini_Int(file, "Locked");
+        HouseX[i] = dini_Float(file, "X");
+        HouseY[i] = dini_Float(file, "Y");
+        HouseZ[i] = dini_Float(file, "Z");
+        HouseIX[i] = dini_Float(file, "IX");
+        HouseIY[i] = dini_Float(file, "IY");
+        HouseIZ[i] = dini_Float(file, "IZ");
+        HouseInterior[i] = dini_Int(file, "Interior");
+
+        CriarCasa(i);
+    }
 }
 
-// =====================
-// POSIÇÃO
-// =====================
-stock SalvarPosicao(playerid)
-{
-    if (!Logado[playerid]) return;
-
-    new file[64];
-    GetUserFile(playerid, file, sizeof(file));
-
-    new Float:x, y, z;
-    GetPlayerPos(playerid, x, y, z);
-
-    dini_FloatSet(file, "Posicao:X", x);
-    dini_FloatSet(file, "Posicao:Y", y);
-    dini_FloatSet(file, "Posicao:Z", z);
-    dini_IntSet(file, "Posicao:Interior", GetPlayerInterior(playerid));
-    dini_IntSet(file, "Posicao:VW", GetPlayerVirtualWorld(playerid));
-}
-
-stock CarregarPosicao(playerid)
-{
-    new file[64];
-    GetUserFile(playerid, file, sizeof(file));
-
-    LastX[playerid] = dini_Float(file, "Posicao:X");
-    LastY[playerid] = dini_Float(file, "Posicao:Y");
-    LastZ[playerid] = dini_Float(file, "Posicao:Z");
-    LastInterior[playerid] = dini_Int(file, "Posicao:Interior");
-    LastVW[playerid] = dini_Int(file, "Posicao:VW");
-}
-
-// =====================
-// FILTERSCRIPT INIT
-// =====================
+// ================= CALLBACKS =================
 public OnFilterScriptInit()
 {
-    print("[CMD] Sistema de Login/Admin e Casas carregado");
+    print("[CASAS] Sistema carregado");
+    CarregarCasas();
     return 1;
 }
 
-// =====================
-// PLAYER CONNECT / DISCONNECT
-// =====================
 public OnPlayerConnect(playerid)
 {
     Logado[playerid] = false;
     PlayerAdminLevel[playerid] = 0;
-    PlayerHouse[playerid] = 0;
+    UltimaCasa[playerid] = -1;
 
     new file[64];
-    GetUserFile(playerid, file, sizeof(file));
+    GetUserFile(playerid, file, sizeof file);
 
     if (dini_Exists(file))
-    {
         ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
             "Login", "Digite sua senha:", "Entrar", "Sair");
-    }
     else
-    {
-        ShowPlayerDialog(playerid, DIALOG_REGISTRO, DIALOG_STYLE_PASSWORD,
+        ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD,
             "Registro", "Crie uma senha:", "Registrar", "Sair");
-    }
     return 1;
 }
 
-public OnPlayerDisconnect(playerid, reason)
-{
-    SalvarPosicao(playerid);
-    return 1;
-}
-
-// =====================
-// SPAWN
-// =====================
-public OnPlayerSpawn(playerid)
-{
-    if (LastX[playerid] != 0.0)
-    {
-        SetPlayerInterior(playerid, LastInterior[playerid]);
-        SetPlayerVirtualWorld(playerid, LastVW[playerid]);
-        SetPlayerPos(playerid, LastX[playerid], LastY[playerid], LastZ[playerid]);
-    }
-    else
-    {
-        SetPlayerPos(playerid, 1529.6, -1691.2, 13.3);
-    }
-}
-
-// =====================
-// DIALOG RESPONSE
-// =====================
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
     if (!response) return Kick(playerid);
 
-    if (dialogid == DIALOG_REGISTRO)
+    if (dialogid == DIALOG_REGISTER)
     {
-        if (strlen(inputtext) < 3)
-            return ShowPlayerDialog(playerid, DIALOG_REGISTRO, DIALOG_STYLE_PASSWORD,
-                "Registro", "Senha muito curta!", "Registrar", "Sair");
-
-        RegistrarConta(playerid, inputtext);
+        Registrar(playerid, inputtext);
         Logado[playerid] = true;
         SpawnPlayer(playerid);
-        SendClientMessage(playerid, COR_VERDE, "Conta criada com sucesso!");
         return 1;
     }
 
     if (dialogid == DIALOG_LOGIN)
     {
-        if (!ChecarSenha(playerid, inputtext))
-            return Kick(playerid);
-
+        if (!ChecarSenha(playerid, inputtext)) return Kick(playerid);
         Logado[playerid] = true;
-        CarregarAdmin(playerid);
-        CarregarPosicao(playerid);
         SpawnPlayer(playerid);
-        SendClientMessage(playerid, COR_VERDE, "Login efetuado!");
         return 1;
     }
     return 1;
 }
 
-// =====================
-// CASA ADMIN / COMPRA / ENTRAR / VENDER
-// =====================
+// ================= COMANDOS =================
 CMD:sethouse(playerid, params[])
 {
     if (PlayerAdminLevel[playerid] < 5)
         return SendClientMessage(playerid, COR_VERMELHO, "Sem permissão.");
 
-    new id, price;
-    if (sscanf(params, "ii", id, price))
+    new id, preco;
+    if (sscanf(params, "ii", id, preco))
         return SendClientMessage(playerid, COR_AMARELO, "/sethouse [id] [preço]");
 
-    HousePrice[id] = price;
-    HouseLocked[id] = true;
+    GetPlayerPos(playerid, HouseX[id], HouseY[id], HouseZ[id]);
+    HouseIX[id] = 223.0;
+    HouseIY[id] = 1287.0;
+    HouseIZ[id] = 1082.1;
+    HouseInterior[id] = 1;
 
-    new Float:x, y, z;
-    GetPlayerPos(playerid, x, y, z);
+    HousePrice[id] = preco;
+    HouseOwner[id] = -1;
+    HouseLocked[id] = 1;
+    HouseExists[id] = true;
 
-    // Cria pickup e 3DTextLabel
-    if (HousePickup[id] != 0) DestroyPickup(HousePickup[id]);
-    if (House3DLabel[id] != 0) DestroyDynamic3DTextLabel(House3DLabel[id]);
+    CriarCasa(id);
+    SalvarCasa(id);
 
-    HousePickup[id] = CreatePickup(1272, x, y, z, 1, 0); // Tipo 1272 = chave
-    House3DLabel[id] = CreateDynamic3DTextLabel("Casa trancada", 0xFF0000FF, x, y, z + 1.0, 10.0, 0);
-
-    SendClientMessage(playerid, COR_VERDE, "Casa definida!");
+    SendClientMessage(playerid, COR_VERDE, "Casa criada!");
+    return 1;
 }
 
-// Comprar casa
 CMD:buyhouse(playerid, params[])
 {
-    new id;
-    if (sscanf(params, "i", id))
-        return SendClientMessage(playerid, COR_AMARELO, "/buyhouse [id]");
+    for (new i; i < MAX_HOUSES; i++)
+    {
+        if (!HouseExists[i] || HouseOwner[i] != -1) continue;
+        if (!IsPlayerInRangeOfPoint(playerid, 2.0, HouseX[i], HouseY[i], HouseZ[i])) continue;
 
-    if (HouseLocked[id])
-        return SendClientMessage(playerid, COR_VERMELHO, "Casa está trancada pelo admin.");
-
-    new money = GetPlayerMoney(playerid);
-    if (money < HousePrice[id])
-        return SendClientMessage(playerid, COR_VERMELHO, "Dinheiro insuficiente.");
-
-    TakePlayerMoney(playerid, HousePrice[id]);
-
-    new file[64];
-    GetHouseFile(id, file, sizeof(file));
-
-    dini_Set(file, "Owner", GetPlayerName(playerid, file, sizeof(file)));
-    HouseLocked[id] = true;
-    PlayerHouse[playerid] = id;
-
-    SendClientMessage(playerid, COR_VERDE, "Você comprou a casa!");
+        GivePlayerMoney(playerid, -HousePrice[i]);
+        HouseOwner[i] = playerid;
+        SalvarCasa(i);
+        AtualizarCasa(i);
+        return SendClientMessage(playerid, COR_VERDE, "Casa comprada!");
+    }
+    return 1;
 }
 
-// Entrar na casa
 CMD:enterhouse(playerid, params[])
 {
-    new id;
-    if (sscanf(params, "i", id))
-        return SendClientMessage(playerid, COR_AMARELO, "/enterhouse [id]");
+    for (new i; i < MAX_HOUSES; i++)
+    {
+        if (!HouseExists[i]) continue;
+        if (!IsPlayerInRangeOfPoint(playerid, 2.0, HouseX[i], HouseY[i], HouseZ[i])) continue;
 
-    if (PlayerHouse[playerid] != id)
-        return SendClientMessage(playerid, COR_VERMELHO, "Esta não é sua casa.");
+        if (HouseLocked[i] && HouseOwner[i] != playerid)
+            return SendClientMessage(playerid, COR_VERMELHO, "Casa trancada.");
 
-    SetPlayerInterior(playerid, id + 100); // Interior diferente por casa
-    SetPlayerVirtualWorld(playerid, id + 100);
-    SetPlayerPos(playerid, 10.0, 10.0, 3.0);
+        SetPlayerInterior(playerid, HouseInterior[i]);
+        SetPlayerPos(playerid, HouseIX[i], HouseIY[i], HouseIZ[i]);
+        UltimaCasa[playerid] = i;
+        return 1;
+    }
+    return 1;
 }
 
-// Vender casa
 CMD:sellhouse(playerid, params[])
 {
-    new id;
-    if (sscanf(params, "i", id))
-        return SendClientMessage(playerid, COR_AMARELO, "/sellhouse [id]");
+    for (new i; i < MAX_HOUSES; i++)
+    {
+        if (HouseOwner[i] != playerid) continue;
 
-    if (PlayerHouse[playerid] != id)
-        return SendClientMessage(playerid, COR_VERMELHO, "Você não possui esta casa.");
-
-    PlayerHouse[playerid] = 0;
-    HouseLocked[id] = false;
-
-    new file[64];
-    GetHouseFile(id, file, sizeof(file));
-    dini_Unset(file, "Owner");
-
-    GivePlayerMoney(playerid, HousePrice[id] / 2); // Recebe metade ao vender
-    SendClientMessage(playerid, COR_VERDE, "Casa vendida com sucesso!");
+        HouseOwner[i] = -1;
+        GivePlayerMoney(playerid, HousePrice[i] / 2);
+        SalvarCasa(i);
+        AtualizarCasa(i);
+        return SendClientMessage(playerid, COR_VERDE, "Casa vendida.");
+    }
+    return 1;
 }
