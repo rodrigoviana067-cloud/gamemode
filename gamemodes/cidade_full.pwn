@@ -7,7 +7,7 @@ forward OnPlayerCommandText(playerid, cmdtext[]);
 
 public OnGameModeInit() {
     print("Gamemode iniciado!");
-    SetMaxPlayers(100); // Exemplo
+    // SetMaxPlayers(100); <- Removido, use maxplayers no server.cfg
     SetGameModeText("Cidade RP Full");
     SetTeamCount(0);
     return 1;
@@ -19,7 +19,9 @@ public OnPlayerConnect(playerid) {
 }
 
 public OnPlayerRequestSpawn(playerid) {
-    Float:x = 0.0, y = 0.0, z = 3.0;
+    new Float:x = 0.0;
+    new Float:y = 0.0;
+    new Float:z = 3.0;
     AddPlayerClass(0, x, y, z, 0.0, 0,0,0,0,0,0);
     return 1;
 }
