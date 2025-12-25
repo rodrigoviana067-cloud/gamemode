@@ -136,11 +136,7 @@ CMD:buyhouse(playerid, params[])
 
             SaveHouse(i);
 
-            SetDynamic3DTextLabelText(
-                House[i][hLabel],
-                0xFF0000FF,
-                "Casa privada"
-            );
+            UpdateDynamic3DTextLabelText
 
             SendClientMessage(playerid, -1, "Você comprou a casa!");
             return 1;
@@ -178,11 +174,7 @@ CMD:sellhouse(playerid, params[])
 
     GivePlayerMoney(playerid, HOUSE_PRICE / 2);
 
-    SetDynamic3DTextLabelText(
-        House[id][hLabel],
-        0x00FF00FF,
-        "Casa à venda"
-    );
+    UpdateDynamic3DTextLabelText
 
     SaveHouse(id);
     SendClientMessage(playerid, -1, "Casa vendida.");
