@@ -1,7 +1,7 @@
 #include <a_samp>
 #include <zcmd>
 #include <sscanf2>
-#include <ini> // <<< aqui usamos o ini.inc
+#include <simple_ini> // <<< aqui usamos o ini.inc
 
 // =====================
 // CORES
