@@ -1,27 +1,38 @@
-// include/simple_ini.inc - INI simples com sobrescrita
+// simple_ini.inc - INI simples compatível Pawn 3.10.10 / SA-MP 0.3
+// Sobrescreve valores existentes
+
 stock bool:WriteINIString(const file[], const section[], const key[], const value[])
 {
     new File:f;
-    new lines[1024][128]; // buffer temporário
-    new count = 0;
+    new text[8192]; // buffer de leitura
+    new lines[512][128];
+    new count = 0, i;
     new in_section = 0, found = 0;
-    new i;
 
-    // Ler arquivo se existir
+    // Ler arquivo existente
     f = fopen(file, io_read);
     if (f)
     {
-        while (!feof(f))
+        new len;
+        while ((len = fread(f, text, sizeof(text))) > 0)
         {
-            fgets(f, lines[count], sizeof(lines[count]));
-            trim(lines[count]);
-            count++;
-            if (count >= sizeof(lines)) break;
+            new line[128], idx = 0, j;
+            for (j = 0; j < len; j++)
+            {
+                if (text[j] == 10 || text[j] == 13) // LF ou CR
+                {
+                    line[idx] = '\0';
+                    trim(line);
+                    if (strlen(line)) strcopy(lines[count++], sizeof(lines[count-1]), line);
+                    idx = 0;
+                }
+                else line[idx++] = text[j];
+            }
         }
         fclose(f);
     }
 
-    // Atualizar ou adicionar valor
+    // Atualizar valor ou adicionar
     in_section = 0;
     found = 0;
     for (i = 0; i < count; i++)
@@ -33,10 +44,10 @@ stock bool:WriteINIString(const file[], const section[], const key[], const valu
         }
         if (in_section)
         {
-            new tmp[128];
-            if (sscanf(lines[i], "s=s", tmp, tmp) == 2)
+            new tmpkey[128], tmpval[128];
+            if (sscanf(lines[i], "s=s", tmpkey, tmpval) == 2)
             {
-                if (strcmp(tmp, key) == 0)
+                if (strcmp(tmpkey, key) == 0)
                 {
                     format(lines[i], sizeof(lines[i]), "%s=%s", key, value);
                     found = 1;
@@ -46,11 +57,9 @@ stock bool:WriteINIString(const file[], const section[], const key[], const valu
         }
     }
 
-    // Se não encontrou, adiciona seção/chave
     if (!found)
     {
-        if (!count || strcmp(strmid(lines[count-1], 0, 1), "[") != 0) // não adiciona seção duplicada
-            format(lines[count++], sizeof(lines[count-1]), "[%s]", section);
+        format(lines[count++], sizeof(lines[count-1]), "[%s]", section);
         format(lines[count++], sizeof(lines[count-1]), "%s=%s", key, value);
     }
 
@@ -60,7 +69,8 @@ stock bool:WriteINIString(const file[], const section[], const key[], const valu
 
     for (i = 0; i < count; i++)
     {
-        fprintf(f, "%s\r\n", lines[i]);
+        fwrite(f, lines[i], strlen(lines[i]));
+        fwrite(f, "\r\n", 2);
     }
     fclose(f);
     return true;
@@ -71,38 +81,54 @@ stock bool:ReadINIString(const file[], const section[], const key[], const def[]
     new File:f = fopen(file, io_read);
     if (!f) { strcopy(dest, size, def); return false; }
 
-    new line[128];
-    new in_section = 0;
-    while (!feof(f))
+    new text[8192];
+    new lines[512][128];
+    new count = 0, i, j;
+    new len = fread(f, text, sizeof(text));
+    fclose(f);
+
+    new line[128], idx = 0;
+    for (j = 0; j < len; j++)
     {
-        fgets(f, line, sizeof(line));
-        trim(line);
-        if (strlen(line) == 0) continue;
-        if (line[0] == '[')
+        if (text[j] == 10 || text[j] == 13)
         {
-            in_section = strcmp(strmid(line,1,strlen(line)-2), section) == 0;
+            line[idx] = '\0';
+            trim(line);
+            if (strlen(line)) strcopy(lines[count++], sizeof(lines[count-1]), line);
+            idx = 0;
+        }
+        else line[idx++] = text[j];
+    }
+
+    new in_section = 0;
+    for (i = 0; i < count; i++)
+    {
+        if (lines[i][0] == '[')
+        {
+            in_section = strcmp(strmid(lines[i], 1, strlen(lines[i])-2), section) == 0;
             continue;
         }
         if (in_section)
         {
-            new tmp[128];
-            if (sscanf(line,"s=s", tmp, dest) == 2)
+            new tmpkey[128], tmpval[128];
+            if (sscanf(lines[i], "s=s", tmpkey, tmpval) == 2)
             {
-                fclose(f);
-                return true;
+                if (strcmp(tmpkey, key) == 0)
+                {
+                    strcopy(dest, size, tmpval);
+                    return true;
+                }
             }
         }
     }
 
-    fclose(f);
     strcopy(dest, size, def);
     return false;
 }
 
 stock WriteINIInt(const file[], const section[], const key[], value)
 {
-    new tmp[16];
-    format(tmp, sizeof(tmp), "%d", value);
+    new tmp[16]; format(tmp, sizeof(tmp), "%d", value);
     return WriteINIString(file, section, key, tmp);
 }
 
