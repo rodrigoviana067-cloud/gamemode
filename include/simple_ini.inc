@@ -1,3 +1,35 @@
+// ==============================
+// Funções auxiliares (Pawn puro)
+// ==============================
+
+stock strcopy(dest[], size, const src[])
+{
+    new i;
+    for (i = 0; i < size - 1 && src[i] != '\0'; i++)
+        dest[i] = src[i];
+    dest[i] = '\0';
+    return i;
+}
+
+stock trim(string[])
+{
+    new len = strlen(string);
+    while (len > 0 && (string[len - 1] == ' ' || string[len - 1] == '\n' || string[len - 1] == '\r' || string[len - 1] == '\t'))
+    {
+        string[len - 1] = '\0';
+        len--;
+    }
+
+    new start = 0;
+    while (string[start] == ' ' || string[start] == '\n' || string[start] == '\r' || string[start] == '\t')
+        start++;
+
+    if (start > 0)
+        strcopy(string, len - start + 1, string[start]);
+
+    return 1;
+}
+
 // simple_ini.inc - INI simples compatível Pawn 3.10.10 / SA-MP 0.3
 // Sobrescreve valores existentes
 
