@@ -2,191 +2,185 @@
 #include <zcmd>
 #include <sscanf2>
 
-// ======================
 // CORES
-// ======================
-#define COR_BRANCO   0xFFFFFFFF
+#define COR_VERDE 0x00FF00FF
 #define COR_VERMELHO 0xFF0000FF
-#define COR_VERDE    0x00FF00FF
-#define COR_AMARELO  0xFFFF00FF
-#define COR_CINZA    0xAAAAAAFF
-#define COR_ROXO     0xC2A2DAFF
 
-// ======================
+#define DIALOG_LOGIN 1
+#define DIALOG_REGISTRO 2
+
+#define USER_PATH "scriptfiles/contas/%s.ini"
+
 // VARIÁVEIS
-// ======================
-#define ADMIN_FILE "admins.txt"
+new bool:Logado[MAX_PLAYERS];
 new PlayerAdminLevel[MAX_PLAYERS];
 
-// ======================
-// INIT / EXIT
-// ======================
+// ===================
+// HELPERS
+// ===================
+stock GetUserFile(playerid, dest[], size)
+{
+    new name[MAX_PLAYER_NAME];
+    GetPlayerName(playerid, name, sizeof(name));
+    format(dest, size, USER_PATH, name);
+}
+
+stock RegistrarConta(playerid, senha[])
+{
+    new File:f;
+    new file[64];
+    GetUserFile(playerid, file, sizeof(file));
+
+    f = fopen(file, io_write);
+    if (!f) return 0;
+
+    fwrite(f, "Senha=");
+    fwrite(f, senha);
+    fwrite(f, "\nAdmin=0\n");
+    fclose(f);
+    return 1;
+}
+
+stock bool:ChecarSenha(playerid, senha[])
+{
+    new File:f;
+    new file[64], linha[128];
+    GetUserFile(playerid, file, sizeof(file));
+
+    f = fopen(file, io_read);
+    if (!f) return false;
+
+    while (!feof(f))
+    {
+        fread(f, linha);
+        if (strfind(linha, "Senha=", true) != -1)
+        {
+            new saved[64];
+            strmid(saved, linha, 6, strlen(linha)-1);
+            fclose(f);
+            return !strcmp(saved, senha, false);
+        }
+    }
+    fclose(f);
+    return false;
+}
+
+stock CarregarAdmin(playerid)
+{
+    new File:f;
+    new file[64], linha[64];
+    GetUserFile(playerid, file, sizeof(file));
+
+    f = fopen(file, io_read);
+    if (!f) return;
+
+    while (!feof(f))
+    {
+        fread(f, linha);
+        if (strfind(linha, "Admin=", true) != -1)
+        {
+            PlayerAdminLevel[playerid] = strval(linha[6]);
+            break;
+        }
+    }
+    fclose(f);
+}
+
+stock SalvarAdmin(playerid)
+{
+    new File:f;
+    new file[64];
+    GetUserFile(playerid, file, sizeof(file));
+
+    f = fopen(file, io_write);
+    if (!f) return;
+
+    new str[64];
+    format(str, sizeof(str), "Senha=\nAdmin=%d\n", PlayerAdminLevel[playerid]);
+    fwrite(f, str);
+    fclose(f);
+}
+
+// ===================
+// FILTERSCRIPT INIT
+// ===================
 public OnFilterScriptInit()
 {
-    print("[CMD] Filterscript CMD carregado");
-    LoadAdmins();
+    print("[CMD] Sistema de Login/Admin carregado");
     return 1;
 }
 
-public OnFilterScriptExit()
-{
-    SaveAdmins();
-    return 1;
-}
-
+// ===================
+// PLAYER CONNECT
+// ===================
 public OnPlayerConnect(playerid)
 {
+    Logado[playerid] = false;
     PlayerAdminLevel[playerid] = 0;
-    LoadAdminForPlayer(playerid);
-    SendClientMessage(playerid, COR_VERDE, "Bem-vindo ao servidor RP!");
-    return 1;
-}
 
-// ======================
-// ADMIN
-// ======================
-stock bool:IsAdmin(playerid, level)
-{
-    return PlayerAdminLevel[playerid] >= level;
-}
+    new file[64];
+    GetUserFile(playerid, file, sizeof(file));
 
-// ======================
-// SAVE / LOAD
-// ======================
-stock SaveAdmins()
-{
-    new File:f = fopen(ADMIN_FILE, io_write);
-    if (!f) return;
-
-    new name[MAX_PLAYER_NAME], line[64];
-    for (new i = 0; i < MAX_PLAYERS; i++)
+    if (fexist(file))
     {
-        if (PlayerAdminLevel[i] > 0 && IsPlayerConnected(i))
-        {
-            GetPlayerName(i, name, sizeof(name));
-            format(line, sizeof(line), "%s %d\r\n", name, PlayerAdminLevel[i]);
-            fwrite(f, line);
-        }
+        ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
+            "Login", "Digite sua senha:", "Entrar", "Sair");
     }
-    fclose(f);
-}
-
-stock LoadAdmins()
-{
-    if (!fexist(ADMIN_FILE)) return;
-
-    new File:f = fopen(ADMIN_FILE, io_read);
-    if (!f) return;
-
-    new line[64];
-    while (fread(f, line))
+    else
     {
-        new name[MAX_PLAYER_NAME], level;
-        if (sscanf(line, "s[24] i", name, level) == 0)
-        {
-            for (new i = 0; i < MAX_PLAYERS; i++)
-            {
-                if (IsPlayerConnected(i))
-                {
-                    new pname[MAX_PLAYER_NAME];
-                    GetPlayerName(i, pname, sizeof(pname));
-                    if (!strcmp(pname, name, true))
-                        PlayerAdminLevel[i] = level;
-                }
-            }
-        }
+        ShowPlayerDialog(playerid, DIALOG_REGISTRO, DIALOG_STYLE_PASSWORD,
+            "Registro", "Crie uma senha:", "Registrar", "Sair");
     }
-    fclose(f);
+    return 1;
 }
 
-stock LoadAdminForPlayer(playerid)
+// ===================
+// DIALOG RESPONSE
+// ===================
+public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
-    if (!fexist(ADMIN_FILE)) return;
+    if (!response) return Kick(playerid);
 
-    new File:f = fopen(ADMIN_FILE, io_read);
-    if (!f) return;
-
-    new line[64], name[MAX_PLAYER_NAME];
-    GetPlayerName(playerid, name, sizeof(name));
-
-    while (fread(f, line))
+    if (dialogid == DIALOG_REGISTRO)
     {
-        new pname[MAX_PLAYER_NAME], level;
-        if (sscanf(line, "s[24] i", pname, level) == 0)
-        {
-            if (!strcmp(pname, name, true))
-            {
-                PlayerAdminLevel[playerid] = level;
-                break;
-            }
-        }
+        if (strlen(inputtext) < 3)
+            return ShowPlayerDialog(playerid, DIALOG_REGISTRO, DIALOG_STYLE_PASSWORD,
+                "Registro", "Senha muito curta!", "Registrar", "Sair");
+
+        RegistrarConta(playerid, inputtext);
+        Logado[playerid] = true;
+        SendClientMessage(playerid, COR_VERDE, "Conta registrada com sucesso!");
+        return 1;
     }
-    fclose(f);
+
+    if (dialogid == DIALOG_LOGIN)
+    {
+        if (!ChecarSenha(playerid, inputtext))
+            return Kick(playerid);
+
+        Logado[playerid] = true;
+        CarregarAdmin(playerid);
+        SendClientMessage(playerid, COR_VERDE, "Login efetuado!");
+        return 1;
+    }
+    return 0;
 }
 
-// ======================
-// COMANDOS PLAYER
-// ======================
-CMD:hora(playerid)
-{
-    new h, m, s, str[64];
-    gettime(h, m, s);
-    format(str, sizeof(str), "Hora do servidor: %02d:%02d:%02d", h, m, s);
-    SendClientMessage(playerid, COR_VERDE, str);
-    return 1;
-}
-
-CMD:id(playerid)
-{
-    new str[64];
-    format(str, sizeof(str), "Seu ID é %d", playerid);
-    SendClientMessage(playerid, COR_VERDE, str);
-    return 1;
-}
-
-CMD:pm(playerid, params[])
-{
-    new id, msg[128];
-    if (sscanf(params, "is[128]", id, msg))
-        return SendClientMessage(playerid, COR_VERMELHO, "Uso: /pm [id] [msg]");
-
-    new str[160];
-    format(str, sizeof(str), "[PM] %d -> %d: %s", playerid, id, msg);
-    SendClientMessage(playerid, COR_AMARELO, str);
-    SendClientMessage(id, COR_AMARELO, str);
-    return 1;
-}
-
-// ======================
+// ===================
 // COMANDOS ADMIN
-// ======================
+// ===================
 CMD:setadmin(playerid, params[])
 {
-    if (!IsAdmin(playerid, 5))
-        return SendClientMessage(playerid, COR_VERMELHO, "Você não é admin 5.");
-
-    new id, level;
-    if (sscanf(params, "ii", id, level))
-        return SendClientMessage(playerid, COR_VERMELHO, "Uso: /setadmin [id] [nivel]");
-
-    PlayerAdminLevel[id] = level;
-    SaveAdmins();
-
-    new str[96];
-    format(str, sizeof(str), "Admin %d setou admin %d para %d", playerid, level, id);
-    SendClientMessageToAll(COR_VERMELHO, str);
-    return 1;
-}
-
-CMD:kick(playerid, params[])
-{
-    if (!IsAdmin(playerid, 1))
+    if (PlayerAdminLevel[playerid] < 5)
         return SendClientMessage(playerid, COR_VERMELHO, "Sem permissão.");
 
-    new id, motivo[64];
-    if (sscanf(params, "is[64]", id, motivo))
-        return SendClientMessage(playerid, COR_VERMELHO, "Uso: /kick [id] [motivo]");
+    new id, nivel;
+    if (sscanf(params, "ii", id, nivel)) return 1;
 
-    Kick(id);
+    PlayerAdminLevel[id] = nivel;
+    SalvarAdmin(id);
+
+    SendClientMessage(id, COR_VERDE, "Você recebeu admin!");
+    SendClientMessage(playerid, COR_VERDE, "Admin setado com sucesso.");
     return 1;
 }
