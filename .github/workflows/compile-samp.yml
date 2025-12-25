@@ -1,8 +1,12 @@
-name: Compile SA-MP Gamemode
+name: Compilar SA-MP Pawn (FINAL REAL)
 
 on:
   push:
-    branches: [ "main" ]
+    paths:
+      - "gamemodes/*.pwn"
+  pull_request:
+    paths:
+      - "gamemodes/*.pwn"
   workflow_dispatch:
 
 jobs:
@@ -10,24 +14,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Download Pawn Compiler
+    - name: Baixar Pawn Compiler 3.10.10
       run: |
+        set -e
         wget https://github.com/pawn-lang/compiler/releases/download/v3.10.10/pawnc-3.10.10-linux.tar.gz
         tar -xzf pawnc-3.10.10-linux.tar.gz
+        chmod +x pawnc-3.10.10-linux/bin/pawncc
 
-    - name: Compile Gamemode
+    - name: Instalar libpawnc.so
       run: |
-        mkdir -p compiled
-        ./pawnc-3.10.10-linux/bin/pawncc \
-          -iinclude \
-          gamemodes/cidade_full.pwn \
-          -o compiled/cidade_full.amx
+        set -e
+        LIB_PATH=$(find pawnc-3.10.10-linux -name "libpawnc.so" | head -n 1)
+        sudo cp "$LIB_PATH" /usr/lib/
+        sudo ldconfig
 
-    - name: Upload AMX
+    - name: Compilar gamemodes
+      run: |
+        set -e
+        mkdir -p compiled
+        for file in gamemodes/*.pwn; do
+          name=$(basename "$file" .pwn)
+          echo "Compilando $file"
+          ./pawnc-3.10.10-linux/bin/pawncc "$file" -i./include -o"compiled/$name.amx"
+        done
+
+    - name: Upload dos AMX
       uses: actions/upload-artifact@v4
       with:
-        name: cidade_full-amx
-        path: compiled/cidade_full.amx
+        name: gamemodes-amx
+        path: compiled/*.amx
