@@ -1,168 +1,190 @@
 #include <a_samp>
-#include <YSF>
 #include <zcmd>
-#include <dini>
+#include <sscanf2>
 #include <streamer>
+#include <dini>
 
-#define MAX_PLAYERS 500
-#define MAX_HOUSES 100
+// ================= CONFIG =================
+#define MAX_HOUSES 500
+#define HOUSE_PRICE 50000
 
-new PlayerLogged[MAX_PLAYERS];
-new PlayerHouse[MAX_PLAYERS]; // Armazena ID da casa que o player está
-new HouseOwner[MAX_HOUSES];   // Armazena playerid que possui a casa
-new HousePosX[MAX_HOUSES];
-new HousePosY[MAX_HOUSES];
-new HousePosZ[MAX_HOUSES];
-new HouseInterior[MAX_HOUSES];
-new HousePrice[MAX_HOUSES];
-new Text3D:HouseLabel[MAX_HOUSES];
-new Pickup:HousePickup[MAX_HOUSES];
-
-#define HOUSES_FILE "houses.ini"
-#define PLAYERS_FILE "players.ini"
-
-// ==================================================
-// Inicialização
-// ==================================================
-public OnFilterScriptInit()
+// ================= ENUM ===================
+enum hInfo
 {
-    // Carregar casas
-    for(new i = 0; i < MAX_HOUSES; i++)
-    {
-        HouseOwner[i] = dini_Int(HOUSES_FILE, format("house_owner_%d", i));
-        HousePosX[i] = dini_Float(HOUSES_FILE, format("house_x_%d", i));
-        HousePosY[i] = dini_Float(HOUSES_FILE, format("house_y_%d", i));
-        HousePosZ[i] = dini_Float(HOUSES_FILE, format("house_z_%d", i));
-        HouseInterior[i] = dini_Int(HOUSES_FILE, format("house_interior_%d", i));
-        HousePrice[i] = dini_Int(HOUSES_FILE, format("house_price_%d", i));
+    Float:hX,
+    Float:hY,
+    Float:hZ,
+    Float:hIntX,
+    Float:hIntY,
+    Float:hIntZ,
+    hInterior,
+    hOwner,
+    hLocked,
+    Text3D:hLabel,
+    Pickup:hPickup
+};
 
-        if(HouseOwner[i] != -1)
-        {
-            // Criar Pickup e 3DTextLabel
-            HousePickup[i] = CreateDynamicPickup(1272, 1, HousePosX[i], HousePosY[i], HousePosZ[i], -1, HouseInterior[i]);
-            HouseLabel[i] = CreateDynamic3DTextLabel(
-                "Casa disponível",
-                0xFFFFFFFF,
-                HousePosX[i], HousePosY[i], HousePosZ[i] + 1.0,
-                20.0,
-                INVALID_PLAYER_ID,
-                -1,
-                0,
-                -1,
-                HouseInterior[i]
-            );
-        }
-    }
-    return 1;
+new House[MAX_HOUSES][hInfo];
+new PlayerHouse[MAX_PLAYERS] = {-1, ...};
+
+// ================= PATH ===================
+stock HouseFile(id, string[], size)
+{
+    format(string, size, "houses/house_%d.ini", id);
 }
 
-// ==================================================
-// Login
-// ==================================================
-CMD:register(playerid, params[])
+// ================= LOAD HOUSE =============
+LoadHouse(id)
 {
-    new senha[64];
-    sscanf(params, "s", senha);
+    new file[64];
+    HouseFile(id, file, sizeof file);
 
-    if(PlayerLogged[playerid])
-    {
-        SendClientMessage(playerid, 0xFF0000FF, "Você já está logado.");
-        return 1;
-    }
+    if(!dini_Exists(file)) return 0;
 
-    if(!dini_Isset(PLAYERS_FILE, format("player_%d_password", playerid)))
-    {
-        // Registro
-        dini_Set(PLAYERS_FILE, format("player_%d_password", playerid), senha);
-        PlayerLogged[playerid] = 1;
-        SendClientMessage(playerid, 0x00FF00FF, "Registrado e logado com sucesso!");
-    }
+    House[id][hX] = dini_Float(file, "X");
+    House[id][hY] = dini_Float(file, "Y");
+    House[id][hZ] = dini_Float(file, "Z");
+
+    House[id][hIntX] = dini_Float(file, "IX");
+    House[id][hIntY] = dini_Float(file, "IY");
+    House[id][hIntZ] = dini_Float(file, "IZ");
+
+    House[id][hInterior] = dini_Int(file, "Interior");
+    House[id][hOwner] = dini_Int(file, "Owner");
+    House[id][hLocked] = dini_Int(file, "Locked");
+
+    new label[128];
+    if(House[id][hOwner] == -1)
+        format(label, sizeof label, "Casa à venda\nPreço: $%d", HOUSE_PRICE);
     else
-    {
-        // Login
-        if(!strcmp(dini_Get(PLAYERS_FILE, format("player_%d_password", playerid)), senha, true))
-        {
-            PlayerLogged[playerid] = 1;
-            SendClientMessage(playerid, 0x00FF00FF, "Logado com sucesso!");
-        }
-        else
-        {
-            SendClientMessage(playerid, 0xFF0000FF, "Senha incorreta!");
-        }
-    }
+        format(label, sizeof label, "Casa privada");
+
+    House[id][hPickup] = CreateDynamicPickup(
+        1273, 23,
+        House[id][hX], House[id][hY], House[id][hZ]
+    );
+
+    House[id][hLabel] = CreateDynamic3DTextLabel(
+        label, 0x00FF00FF,
+        House[id][hX], House[id][hY], House[id][hZ] + 1.0,
+        10.0
+    );
+
     return 1;
 }
 
-// ==================================================
-// Comandos de Casa
-// ==================================================
+// ================= SAVE HOUSE =============
+SaveHouse(id)
+{
+    new file[64];
+    HouseFile(id, file, sizeof file);
+
+    if(!dini_Exists(file)) dini_Create(file);
+
+    dini_FloatSet(file, "X", House[id][hX]);
+    dini_FloatSet(file, "Y", House[id][hY]);
+    dini_FloatSet(file, "Z", House[id][hZ]);
+
+    dini_FloatSet(file, "IX", House[id][hIntX]);
+    dini_FloatSet(file, "IY", House[id][hIntY]);
+    dini_FloatSet(file, "IZ", House[id][hIntZ]);
+
+    dini_IntSet(file, "Interior", House[id][hInterior]);
+    dini_IntSet(file, "Owner", House[id][hOwner]);
+    dini_IntSet(file, "Locked", House[id][hLocked]);
+}
+
+// ================= CREATE HOUSE (ADMIN) ===
+CMD:sethouse(playerid, params[])
+{
+    new id;
+    if(sscanf(params, "d", id)) return SendClientMessage(playerid, -1, "/sethouse ID");
+
+    if(id < 0 || id >= MAX_HOUSES) return SendClientMessage(playerid, -1, "ID inválido");
+
+    GetPlayerPos(playerid, House[id][hX], House[id][hY], House[id][hZ]);
+    GetPlayerPos(playerid, House[id][hIntX], House[id][hIntY], House[id][hIntZ]);
+
+    House[id][hInterior] = GetPlayerInterior(playerid);
+    House[id][hOwner] = -1;
+    House[id][hLocked] = 1;
+
+    SaveHouse(id);
+    LoadHouse(id);
+
+    SendClientMessage(playerid, -1, "Casa criada com sucesso.");
+    return 1;
+}
+
+// ================= BUY HOUSE ==============
 CMD:buyhouse(playerid, params[])
 {
-    if(!PlayerLogged[playerid])
+    for(new i; i < MAX_HOUSES; i++)
     {
-        SendClientMessage(playerid, 0xFF0000FF, "Você precisa estar logado para comprar casa.");
-        return 1;
+        if(IsPlayerInRangeOfPoint(playerid, 2.0,
+            House[i][hX], House[i][hY], House[i][hZ]))
+        {
+            if(House[i][hOwner] != -1)
+                return SendClientMessage(playerid, -1, "Essa casa já tem dono.");
+
+            if(GetPlayerMoney(playerid) < HOUSE_PRICE)
+                return SendClientMessage(playerid, -1, "Dinheiro insuficiente.");
+
+            GivePlayerMoney(playerid, -HOUSE_PRICE);
+            House[i][hOwner] = playerid;
+            PlayerHouse[playerid] = i;
+
+            SaveHouse(i);
+
+            SetDynamic3DTextLabelText(
+                House[i][hLabel],
+                0xFF0000FF,
+                "Casa privada"
+            );
+
+            SendClientMessage(playerid, -1, "Você comprou a casa!");
+            return 1;
+        }
     }
-
-    new houseid;
-    sscanf(params, "i", houseid);
-
-    if(HouseOwner[houseid] != -1)
-    {
-        SendClientMessage(playerid, 0xFF0000FF, "Esta casa já está vendida.");
-        return 1;
-    }
-
-    // Dinheiro do player (simulado)
-    new playerMoney = 5000; // Aqui você pode integrar com seu sistema de dinheiro
-    if(playerMoney < HousePrice[houseid])
-    {
-        SendClientMessage(playerid, 0xFF0000FF, "Você não tem dinheiro suficiente.");
-        return 1;
-    }
-
-    // Compra
-    HouseOwner[houseid] = playerid;
-    PlayerHouse[playerid] = houseid;
-
-    dini_IntSet(HOUSES_FILE, format("house_owner_%d", houseid), playerid);
-
-    // Atualizar 3DTextLabel e Pickup
-    SetDynamic3DTextLabelText(HouseLabel[houseid], 0xFF00FFFF, "Casa vendida");
-
-    SendClientMessage(playerid, 0x00FF00FF, "Você comprou a casa com sucesso!");
-    return 1;
+    return SendClientMessage(playerid, -1, "Você não está perto de nenhuma casa.");
 }
 
+// ================= ENTER HOUSE ============
 CMD:enterhouse(playerid, params[])
 {
-    new houseid = PlayerHouse[playerid];
-    if(houseid == -1)
-    {
-        SendClientMessage(playerid, 0xFF0000FF, "Você não possui nenhuma casa.");
-        return 1;
-    }
+    new id = PlayerHouse[playerid];
+    if(id == -1) return SendClientMessage(playerid, -1, "Você não tem casa.");
 
-    SetPlayerInterior(playerid, HouseInterior[houseid]);
-    SetPlayerPos(playerid, HousePosX[houseid], HousePosY[houseid], HousePosZ[houseid]);
-    SendClientMessage(playerid, 0x00FF00FF, "Você entrou em sua casa.");
+    if(House[id][hLocked])
+        return SendClientMessage(playerid, -1, "Casa trancada.");
+
+    SetPlayerInterior(playerid, House[id][hInterior]);
+    SetPlayerPos(playerid,
+        House[id][hIntX],
+        House[id][hIntY],
+        House[id][hIntZ]
+    );
     return 1;
 }
 
+// ================= SELL HOUSE =============
 CMD:sellhouse(playerid, params[])
 {
-    new houseid = PlayerHouse[playerid];
-    if(houseid == -1)
-    {
-        SendClientMessage(playerid, 0xFF0000FF, "Você não possui casa para vender.");
-        return 1;
-    }
+    new id = PlayerHouse[playerid];
+    if(id == -1) return SendClientMessage(playerid, -1, "Você não tem casa.");
 
-    HouseOwner[houseid] = -1;
+    House[id][hOwner] = -1;
     PlayerHouse[playerid] = -1;
-    dini_IntSet(HOUSES_FILE, format("house_owner_%d", houseid), -1);
 
-    SetDynamic3DTextLabelText(HouseLabel[houseid], 0xFFFFFFFF, "Casa disponível");
-    SendClientMessage(playerid, 0x00FF00FF, "Você vendeu a casa com sucesso!");
+    GivePlayerMoney(playerid, HOUSE_PRICE / 2);
+
+    SetDynamic3DTextLabelText(
+        House[id][hLabel],
+        0x00FF00FF,
+        "Casa à venda"
+    );
+
+    SaveHouse(id);
+    SendClientMessage(playerid, -1, "Casa vendida.");
     return 1;
 }
