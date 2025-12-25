@@ -1,6 +1,6 @@
 #include <a_samp>
 #include <zcmd>
-#include <sscanf2>
+#include "sscanf2.inc"
 
 // ======================
 // CORES
@@ -16,19 +16,22 @@
 // VARIÁVEIS
 // ======================
 new PlayerAdminLevel[MAX_PLAYERS];
+#define ADMIN_FILE "admins.txt"
 
 // ======================
-// FILTERSCRIPT INIT
+// FILTERSCRIPT INIT / EXIT
 // ======================
 public OnFilterScriptInit()
 {
     print("[CMD] Filterscript CMD + RP carregado");
+    LoadAdmins(); // Carrega admins do arquivo
     return 1;
 }
 
 public OnFilterScriptExit()
 {
     print("[CMD] Filterscript CMD + RP descarregado");
+    SaveAdmin(); // Salva admins ao desligar
     return 1;
 }
 
@@ -43,11 +46,60 @@ public OnPlayerConnect(playerid)
 }
 
 // ======================
-// FUNÇÕES
+// FUNÇÕES ADMIN
 // ======================
 stock bool:IsAdmin(playerid, level)
 {
     return PlayerAdminLevel[playerid] >= level;
+}
+
+// ======================
+// FUNÇÕES DE SAVE/LOAD
+// ======================
+stock SaveAdmin()
+{
+    new file = fopen(ADMIN_FILE, io_write_text);
+    if (file)
+    {
+        for (new i = 0; i < MAX_PLAYERS; i++)
+        {
+            if (PlayerAdminLevel[i] > 0)
+            {
+                new name[MAX_PLAYER_NAME];
+                GetPlayerName(i, name, sizeof(name));
+                fprintf(file, "%s %d\n", name, PlayerAdminLevel[i]);
+            }
+        }
+        fclose(file);
+    }
+}
+
+stock LoadAdmins()
+{
+    new file = fopen(ADMIN_FILE, io_read_text);
+    if (!file) return;
+
+    new line[64];
+    while (!feof(file))
+    {
+        if (fgets(file, line, sizeof(line)))
+        {
+            new name[MAX_PLAYER_NAME];
+            new level;
+            if (sscanf(line, "s[i] i", name, sizeof(name), level) == 2)
+            {
+                // procura jogador online com esse nome
+                for (new i = 0; i < MAX_PLAYERS; i++)
+                {
+                    new pname[MAX_PLAYER_NAME];
+                    GetPlayerName(i, pname, sizeof(pname));
+                    if (strcmp(name, pname, true) == 0)
+                        PlayerAdminLevel[i] = level;
+                }
+            }
+        }
+    }
+    fclose(file);
 }
 
 // ======================
@@ -144,6 +196,7 @@ CMD:setadmin(playerid, params[])
         return SendClientMessage(playerid, COR_VERMELHO, "Uso: /setadmin [id] [nivel]");
 
     PlayerAdminLevel[id] = level;
+    SaveAdmin(); // salva imediatamente
 
     new str[96];
     format(str, sizeof(str), "Admin %d setou admin nível %d para %d", playerid, level, id);
