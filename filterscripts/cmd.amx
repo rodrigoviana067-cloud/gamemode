@@ -1,0 +1,177 @@
+#include <a_samp>
+#include <zcmd>
+#include <sscanf2>
+
+// ======================
+// DEFINES
+// ======================
+#define COR_BRANCO 0xFFFFFFFF
+#define COR_VERMELHO 0xFF0000FF
+#define COR_VERDE 0x00FF00FF
+#define COR_AMARELO 0xFFFF00FF
+
+// ======================
+// VARIÁVEIS
+// ======================
+new PlayerAdminLevel[MAX_PLAYERS];
+
+// ======================
+// FILTERSCRIPT INIT
+// ======================
+public OnFilterScriptInit()
+{
+    print("[CMD] Filterscript de comandos carregado com sucesso");
+    return 1;
+}
+
+public OnFilterScriptExit()
+{
+    print("[CMD] Filterscript de comandos descarregado");
+    return 1;
+}
+
+// ======================
+// PLAYER CONNECT
+// ======================
+public OnPlayerConnect(playerid)
+{
+    PlayerAdminLevel[playerid] = 0;
+    SendClientMessage(playerid, COR_VERDE, "Bem-vindo ao servidor RP!");
+    return 1;
+}
+
+// ======================
+// FUNÇÕES ÚTEIS
+// ======================
+stock bool:IsAdmin(playerid, level)
+{
+    if (PlayerAdminLevel[playerid] >= level) return true;
+    return false;
+}
+
+// ======================
+// COMANDOS PLAYER
+// ======================
+
+CMD:ajuda(playerid)
+{
+    SendClientMessage(playerid, COR_AMARELO, "=== Comandos Disponíveis ===");
+    SendClientMessage(playerid, COR_BRANCO, "/hora /id /pm");
+    return 1;
+}
+
+CMD:hora(playerid)
+{
+    new h, m, s;
+    gettime(h, m, s);
+    new str[64];
+    format(str, sizeof(str), "Hora do servidor: %02d:%02d:%02d", h, m, s);
+    SendClientMessage(playerid, COR_VERDE, str);
+    return 1;
+}
+
+CMD:id(playerid)
+{
+    new str[64];
+    format(str, sizeof(str), "Seu ID é: %d", playerid);
+    SendClientMessage(playerid, COR_VERDE, str);
+    return 1;
+}
+
+CMD:pm(playerid, params[])
+{
+    new id, msg[128];
+    if (sscanf(params, "is[128]", id, msg))
+        return SendClientMessage(playerid, COR_VERMELHO, "Uso: /pm [id] [mensagem]");
+
+    if (!IsPlayerConnected(id))
+        return SendClientMessage(playerid, COR_VERMELHO, "Jogador não conectado.");
+
+    new str[160];
+    format(str, sizeof(str), "[PM] %d -> %d: %s", playerid, id, msg);
+    SendClientMessage(playerid, COR_AMARELO, str);
+    SendClientMessage(id, COR_AMARELO, str);
+    return 1;
+}
+
+// ======================
+// COMANDOS ADMIN
+// ======================
+
+CMD:setadmin(playerid, params[])
+{
+    if (!IsAdmin(playerid, 5))
+        return SendClientMessage(playerid, COR_VERMELHO, "Você não é administrador.");
+
+    new id, level;
+    if (sscanf(params, "ii", id, level))
+        return SendClientMessage(playerid, COR_VERMELHO, "Uso: /setadmin [id] [nivel]");
+
+    if (!IsPlayerConnected(id))
+        return SendClientMessage(playerid, COR_VERMELHO, "Jogador não conectado.");
+
+    PlayerAdminLevel[id] = level;
+
+    new str[128];
+    format(str, sizeof(str), "Você setou admin nível %d para o jogador %d.", level, id);
+    SendClientMessage(playerid, COR_VERDE, str);
+
+    format(str, sizeof(str), "Você recebeu admin nível %d.", level);
+    SendClientMessage(id, COR_VERDE, str);
+    return 1;
+}
+
+CMD:kick(playerid, params[])
+{
+    if (!IsAdmin(playerid, 1))
+        return SendClientMessage(playerid, COR_VERMELHO, "Você não é administrador.");
+
+    new id, motivo[64];
+    if (sscanf(params, "is[64]", id, motivo))
+        return SendClientMessage(playerid, COR_VERMELHO, "Uso: /kick [id] [motivo]");
+
+    if (!IsPlayerConnected(id))
+        return SendClientMessage(playerid, COR_VERMELHO, "Jogador não conectado.");
+
+    new str[128];
+    format(str, sizeof(str), "Admin %d kickou %d. Motivo: %s", playerid, id, motivo);
+    SendClientMessageToAll(COR_VERMELHO, str);
+    Kick(id);
+    return 1;
+}
+
+CMD:ir(playerid, params[])
+{
+    if (!IsAdmin(playerid, 1))
+        return SendClientMessage(playerid, COR_VERMELHO, "Você não é administrador.");
+
+    new id;
+    if (sscanf(params, "i", id))
+        return SendClientMessage(playerid, COR_VERMELHO, "Uso: /ir [id]");
+
+    if (!IsPlayerConnected(id))
+        return SendClientMessage(playerid, COR_VERMELHO, "Jogador não conectado.");
+
+    new Float:x, Float:y, Float:z;
+    GetPlayerPos(id, x, y, z);
+    SetPlayerPos(playerid, x + 1, y, z);
+    return 1;
+}
+
+CMD:trazer(playerid, params[])
+{
+    if (!IsAdmin(playerid, 1))
+        return SendClientMessage(playerid, COR_VERMELHO, "Você não é administrador.");
+
+    new id;
+    if (sscanf(params, "i", id))
+        return SendClientMessage(playerid, COR_VERMELHO, "Uso: /trazer [id]");
+
+    if (!IsPlayerConnected(id))
+        return SendClientMessage(playerid, COR_VERMELHO, "Jogador não conectado.");
+
+    new Float:x, Float:y, Float:z;
+    GetPlayerPos(playerid, x, y, z);
+    SetPlayerPos(id, x + 1, y, z);
+    return 1;
+}
