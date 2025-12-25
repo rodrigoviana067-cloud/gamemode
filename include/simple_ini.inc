@@ -14,11 +14,42 @@ stock strcopy(dest[], size, const src[])
 stock trim(string[])
 {
     new len = strlen(string);
-    while (len > 0 && (string[len - 1] == ' ' || string[len - 1] == '\n' || string[len - 1] == '\r' || string[len - 1] == '\t'))
+
+    // Remove espaços do final
+    while (len > 0 &&
+        (string[len - 1] == ' ' ||
+         string[len - 1] == '\n' ||
+         string[len - 1] == '\r' ||
+         string[len - 1] == '\t'))
     {
         string[len - 1] = '\0';
         len--;
     }
+
+    // Remove espaços do início
+    new start = 0;
+    while (string[start] == ' ' ||
+           string[start] == '\n' ||
+           string[start] == '\r' ||
+           string[start] == '\t')
+    {
+        start++;
+    }
+
+    if (start > 0)
+    {
+        new i = 0;
+        while (string[start + i] != '\0')
+        {
+            string[i] = string[start + i];
+            i++;
+        }
+        string[i] = '\0';
+    }
+
+    return 1;
+}
+
 
     new start = 0;
     while (string[start] == ' ' || string[start] == '\n' || string[start] == '\r' || string[start] == '\t')
