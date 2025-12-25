@@ -1,7 +1,6 @@
 #include <a_samp>
 #include <zcmd>
 #include <sscanf2>
-#include <simple_ini>
 
 // =====================
 // CORES
@@ -27,6 +26,7 @@
 // =====================
 new bool:Logado[MAX_PLAYERS];
 new PlayerAdminLevel[MAX_PLAYERS];
+new Senha[MAX_PLAYERS][32];
 
 new Float:LastX[MAX_PLAYERS];
 new Float:LastY[MAX_PLAYERS];
@@ -35,7 +35,7 @@ new LastInterior[MAX_PLAYERS];
 new LastVW[MAX_PLAYERS];
 
 // =====================
-// FUNÇÕES AUX
+// FUNÇÕES AUXILIARES
 // =====================
 stock GetUserFile(playerid, dest[], size)
 {
@@ -45,29 +45,44 @@ stock GetUserFile(playerid, dest[], size)
 }
 
 // =====================
-// REGISTRO
+// REGISTRO / LOGIN
 // =====================
 stock RegistrarConta(playerid, const senha[])
 {
     new file[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    WriteINIString(file, "Conta", "Senha", senha);
-    WriteINIInt(file, "Conta", "Admin", 0);
+    new File:f = fopen(file, io_write);
+    if (!f) return 0;
 
+    fprintf(f, "Senha=%s\r\n", senha);
+    fprintf(f, "Admin=0\r\n");
+    fclose(f);
+
+    strcopy(Senha[playerid], sizeof(Senha[playerid]), senha);
     return 1;
 }
 
-// =====================
-// CHECAR SENHA
-// =====================
 stock bool:ChecarSenha(playerid, const senha[])
 {
-    new file[64], saved[64];
+    new file[64], linha[128], saved[32];
     GetUserFile(playerid, file, sizeof(file));
 
-    ReadINIString(file, "Conta", "Senha", "", saved, sizeof(saved));
-    return strcmp(saved, senha) == 0;
+    new File:f = fopen(file, io_read);
+    if (!f) return false;
+
+    while (fread(f, linha))
+    {
+        if (!strncmp(linha, "Senha=", 6))
+        {
+            strmid(saved, linha, 6, strlen(linha)-1);
+            fclose(f);
+            strcopy(Senha[playerid], sizeof(Senha[playerid]), saved);
+            return strcmp(saved, senha) == 0;
+        }
+    }
+    fclose(f);
+    return false;
 }
 
 // =====================
@@ -75,20 +90,36 @@ stock bool:ChecarSenha(playerid, const senha[])
 // =====================
 stock CarregarAdmin(playerid)
 {
-    new file[64];
+    new file[64], linha[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    PlayerAdminLevel[playerid] = ReadINIInt(file, "Conta", "Admin", 0);
+    new File:f = fopen(file, io_read);
+    if (!f) return;
+
+    while (fread(f, linha))
+    {
+        if (!strncmp(linha, "Admin=", 6))
+        {
+            PlayerAdminLevel[playerid] = strval(linha[6]);
+            break;
+        }
+    }
+    fclose(f);
 }
 
 stock SalvarAdmin(playerid)
 {
-    new file[64], senha[64];
+    new file[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    ReadINIString(file, "Conta", "Senha", "", senha, sizeof(senha));
-    WriteINIString(file, "Conta", "Senha", senha);
-    WriteINIInt(file, "Conta", "Admin", PlayerAdminLevel[playerid]);
+    new File:f = fopen(file, io_write);
+    if (!f) return;
+
+    fprintf(f, "Senha=%s\r\n", Senha[playerid]);
+    fprintf(f, "Admin=%d\r\n", PlayerAdminLevel[playerid]);
+    fprintf(f, "X=%f\r\nY=%f\r\nZ=%f\r\n", LastX[playerid], LastY[playerid], LastZ[playerid]);
+    fprintf(f, "Interior=%d\r\nVW=%d\r\n", LastInterior[playerid], LastVW[playerid]);
+    fclose(f);
 }
 
 // =====================
@@ -98,33 +129,30 @@ stock SalvarPosicao(playerid)
 {
     if (!Logado[playerid]) return;
 
-    new file[64], senha[64];
-    GetUserFile(playerid, file, sizeof(file));
+    GetPlayerPos(playerid, LastX[playerid], LastY[playerid], LastZ[playerid]);
+    LastInterior[playerid] = GetPlayerInterior(playerid);
+    LastVW[playerid] = GetPlayerVirtualWorld(playerid);
 
-    ReadINIString(file, "Conta", "Senha", "", senha, sizeof(senha));
-
-    new Float:x, y, z;
-    GetPlayerPos(playerid, x, y, z);
-
-    WriteINIString(file, "Conta", "Senha", senha);
-    WriteINIInt(file, "Conta", "Admin", PlayerAdminLevel[playerid]);
-    WriteINIFloat(file, "Posicao", "X", x);
-    WriteINIFloat(file, "Posicao", "Y", y);
-    WriteINIFloat(file, "Posicao", "Z", z);
-    WriteINIInt(file, "Posicao", "Interior", GetPlayerInterior(playerid));
-    WriteINIInt(file, "Posicao", "VW", GetPlayerVirtualWorld(playerid));
+    SalvarAdmin(playerid);
 }
 
 stock CarregarPosicao(playerid)
 {
-    new file[64];
+    new file[64], linha[128];
     GetUserFile(playerid, file, sizeof(file));
 
-    LastX[playerid] = ReadINIFloat(file, "Posicao", "X", 0.0);
-    LastY[playerid] = ReadINIFloat(file, "Posicao", "Y", 0.0);
-    LastZ[playerid] = ReadINIFloat(file, "Posicao", "Z", 0.0);
-    LastInterior[playerid] = ReadINIInt(file, "Posicao", "Interior", 0);
-    LastVW[playerid] = ReadINIInt(file, "Posicao", "VW", 0);
+    new File:f = fopen(file, io_read);
+    if (!f) return;
+
+    while (fread(f, linha))
+    {
+        if (!strncmp(linha, "X=", 2)) LastX[playerid] = floatstr(linha[2]);
+        else if (!strncmp(linha, "Y=", 2)) LastY[playerid] = floatstr(linha[2]);
+        else if (!strncmp(linha, "Z=", 2)) LastZ[playerid] = floatstr(linha[2]);
+        else if (!strncmp(linha, "Interior=", 9)) LastInterior[playerid] = strval(linha[9]);
+        else if (!strncmp(linha, "VW=", 3)) LastVW[playerid] = strval(linha[3]);
+    }
+    fclose(f);
 }
 
 // =====================
