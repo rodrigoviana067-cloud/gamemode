@@ -59,16 +59,19 @@ stock GetUserFile(playerid, dest[], size)
 // =====================
 stock RegistrarConta(playerid, const senha[])
 {
-    new File:f;
-    new file[64];
+    new file[64], f;
     GetUserFile(playerid, file, sizeof(file));
 
-    f = fopen(file, io_write);
-    if (!f) return 0;
+    f = OpenFile(file, io_write);
+    if (f == 0) return 0;
 
-    fprintf(f, "Senha=%s\r\n", senha);
-    fprintf(f, "Admin=0\r\n");
-    fclose(f);
+    WriteFile(f, "Senha=");
+    WriteFile(f, senha);
+    WriteFile(f, "\r\n");
+
+    WriteFile(f, "Admin=0\r\n");
+
+    CloseFile(f);
     return 1;
 }
 
@@ -77,24 +80,23 @@ stock RegistrarConta(playerid, const senha[])
 // =====================
 stock bool:ChecarSenha(playerid, const senha[])
 {
-    new File:f;
-    new file[64], linha[128];
+    new file[64], f, linha[128];
     GetUserFile(playerid, file, sizeof(file));
 
-    f = fopen(file, io_read);
-    if (!f) return false;
+    f = OpenFile(file, io_read);
+    if (f == 0) return false;
 
-    while (fread(f, linha))
+    while(ReadFileLine(f, linha, sizeof(linha)))
     {
         if (strn_cmp(linha, "Senha=", 6))
         {
             new saved[64];
             strmid(saved, linha, 6, strlen(linha)-1);
-            fclose(f);
+            CloseFile(f);
             return !strcmp(saved, senha);
         }
     }
-    fclose(f);
+    CloseFile(f);
     return false;
 }
 
@@ -103,14 +105,13 @@ stock bool:ChecarSenha(playerid, const senha[])
 // =====================
 stock CarregarAdmin(playerid)
 {
-    new File:f;
-    new file[64], linha[64];
+    new file[64], f, linha[64];
     GetUserFile(playerid, file, sizeof(file));
 
-    f = fopen(file, io_read);
-    if (!f) return;
+    f = OpenFile(file, io_read);
+    if (f == 0) return;
 
-    while (fread(f, linha))
+    while(ReadFileLine(f, linha, sizeof(linha)))
     {
         if (strn_cmp(linha, "Admin=", 6))
         {
@@ -118,23 +119,28 @@ stock CarregarAdmin(playerid)
             break;
         }
     }
-    fclose(f);
+    CloseFile(f);
 }
 
 stock SalvarAdmin(playerid)
 {
-    new File:f;
-    new file[64], senha[64];
+    new file[64], f, senha[64];
     GetUserFile(playerid, file, sizeof(file));
 
     if (!GetSenhaSalva(playerid, senha, sizeof(senha))) return;
 
-    f = fopen(file, io_write);
-    if (!f) return;
+    f = OpenFile(file, io_write);
+    if (f == 0) return;
 
-    fprintf(f, "Senha=%s\r\n", senha);
-    fprintf(f, "Admin=%d\r\n", PlayerAdminLevel[playerid]);
-    fclose(f);
+    WriteFile(f, "Senha=");
+    WriteFile(f, senha);
+    WriteFile(f, "\r\n");
+
+    new buffer[32];
+    format(buffer, sizeof(buffer), "Admin=%d\r\n", PlayerAdminLevel[playerid]);
+    WriteFile(f, buffer);
+
+    CloseFile(f);
 }
 
 // =====================
@@ -142,23 +148,22 @@ stock SalvarAdmin(playerid)
 // =====================
 stock GetSenhaSalva(playerid, senha[], size)
 {
-    new File:f;
-    new file[64], linha[128];
+    new file[64], f, linha[128];
     GetUserFile(playerid, file, sizeof(file));
 
-    f = fopen(file, io_read);
-    if (!f) return 0;
+    f = OpenFile(file, io_read);
+    if (f == 0) return 0;
 
-    while (fread(f, linha))
+    while(ReadFileLine(f, linha, sizeof(linha)))
     {
         if (strn_cmp(linha, "Senha=", 6))
         {
             strmid(senha, linha, 6, strlen(linha)-1);
-            fclose(f);
+            CloseFile(f);
             return 1;
         }
     }
-    fclose(f);
+    CloseFile(f);
     return 0;
 }
 
@@ -169,25 +174,33 @@ stock SalvarPosicao(playerid)
 {
     if (!Logado[playerid]) return;
 
-    new File:f;
-    new file[64], senha[64];
+    new file[64], f, senha[64];
     GetUserFile(playerid, file, sizeof(file));
     if (!GetSenhaSalva(playerid, senha, sizeof(senha))) return;
 
     new Float:x, Float:y, Float:z;
     GetPlayerPos(playerid, x, y, z);
 
-    f = fopen(file, io_write);
-    if (!f) return;
+    f = OpenFile(file, io_write);
+    if (f == 0) return;
 
-    fprintf(f, "Senha=%s\r\n", senha);
-    fprintf(f, "Admin=%d\r\n", PlayerAdminLevel[playerid]);
-    fprintf(f, "X=%f\r\nY=%f\r\nZ=%f\r\n", x, y, z);
-    fprintf(f, "Interior=%d\r\nVW=%d\r\n",
+    WriteFile(f, "Senha=");
+    WriteFile(f, senha);
+    WriteFile(f, "\r\n");
+
+    new buffer[32];
+    format(buffer, sizeof(buffer), "Admin=%d\r\n", PlayerAdminLevel[playerid]);
+    WriteFile(f, buffer);
+
+    format(buffer, sizeof(buffer), "X=%f\r\nY=%f\r\nZ=%f\r\n", x, y, z);
+    WriteFile(f, buffer);
+
+    format(buffer, sizeof(buffer), "Interior=%d\r\nVW=%d\r\n",
         GetPlayerInterior(playerid),
-        GetPlayerVirtualWorld(playerid)
-    );
-    fclose(f);
+        GetPlayerVirtualWorld(playerid));
+    WriteFile(f, buffer);
+
+    CloseFile(f);
 
     // Atualiza variáveis do servidor
     LastX[playerid] = x;
@@ -199,14 +212,13 @@ stock SalvarPosicao(playerid)
 
 stock CarregarPosicao(playerid)
 {
-    new File:f;
-    new file[64], linha[128];
+    new file[64], f, linha[128];
     GetUserFile(playerid, file, sizeof(file));
 
-    f = fopen(file, io_read);
-    if (!f) return;
+    f = OpenFile(file, io_read);
+    if (f == 0) return;
 
-    while (fread(f, linha))
+    while(ReadFileLine(f, linha, sizeof(linha)))
     {
         if (strn_cmp(linha, "X=", 2)) LastX[playerid] = floatstr(linha[2]);
         else if (strn_cmp(linha, "Y=", 2)) LastY[playerid] = floatstr(linha[2]);
@@ -214,7 +226,7 @@ stock CarregarPosicao(playerid)
         else if (strn_cmp(linha, "Interior=", 9)) LastInterior[playerid] = strval(linha[9]);
         else if (strn_cmp(linha, "VW=", 3)) LastVW[playerid] = strval(linha[3]);
     }
-    fclose(f);
+    CloseFile(f);
 }
 
 // =====================
