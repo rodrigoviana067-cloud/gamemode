@@ -16,11 +16,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1️⃣ Fazer checkout do repositório
+    # 1️⃣ Checkout do repositório
     - name: Checkout
       uses: actions/checkout@v4
 
-    # 2️⃣ Baixar e preparar o Pawn Compiler 3.10.10
+    # 2️⃣ Baixar Pawn Compiler 3.10.10
     - name: Baixar Pawn Compiler 3.10.10
       run: |
         set -e
@@ -28,7 +28,7 @@ jobs:
         tar -xzf pawnc-3.10.10-linux.tar.gz
         chmod +x pawnc-3.10.10-linux/bin/pawncc
 
-    # 3️⃣ Instalar libpawnc.so no sistema
+    # 3️⃣ Instalar libpawnc.so
     - name: Instalar libpawnc.so
       run: |
         set -e
@@ -42,9 +42,10 @@ jobs:
         set -e
         mkdir -p compiled/gamemodes
         for file in gamemodes/*.pwn; do
+          [ -s "$file" ] || continue
           name=$(basename "$file" .pwn)
-          echo "Compilando gamemode $file"
-          ./pawnc-3.10.10-linux/bin/pawncc "$file" -i./include -o"compiled/gamemodes/$name.amx"
+          echo "▶ Compilando gamemode: $file"
+          ./pawnc-3.10.10-linux/bin/pawncc "$file" -iinclude -o"compiled/gamemodes/$name.amx"
         done
 
     # 5️⃣ Compilar filterscripts
@@ -53,12 +54,13 @@ jobs:
         set -e
         mkdir -p compiled/filterscripts
         for file in filterscripts/*.pwn; do
+          [ -s "$file" ] || continue
           name=$(basename "$file" .pwn)
-          echo "Compilando filterscript $file"
-          ./pawnc-3.10.10-linux/bin/pawncc "$file" -i./include -o"compiled/filterscripts/$name.amx"
+          echo "▶ Compilando filterscript: $file"
+          ./pawnc-3.10.10-linux/bin/pawncc "$file" -iinclude -o"compiled/filterscripts/$name.amx"
         done
 
-    # 6️⃣ Upload dos AMX compilados
+    # 6️⃣ Upload dos AMX
     - name: Upload dos AMX
       uses: actions/upload-artifact@v4
       with:
