@@ -34,6 +34,17 @@ new LastInterior[MAX_PLAYERS];
 new LastVW[MAX_PLAYERS];
 
 // =====================
+// FUNÇÃO AUXILIAR STRNCMP
+// =====================
+stock bool:strn_cmp(const s1[], const s2[], n)
+{
+    new temp1[128], temp2[128];
+    strmid(temp1, s1, 0, n);
+    strmid(temp2, s2, 0, n);
+    return strcmp(temp1, temp2) == 0;
+}
+
+// =====================
 // FUNÇÕES AUX
 // =====================
 stock GetUserFile(playerid, dest[], size)
@@ -75,10 +86,10 @@ stock bool:ChecarSenha(playerid, const senha[])
 
     while (fread(f, linha))
     {
-        if (!strncmp(linha, "Senha=", 6))
+        if (strn_cmp(linha, "Senha=", 6))
         {
             new saved[64];
-            strmid(saved, linha, 6, strlen(linha) - 1);
+            strmid(saved, linha, 6, strlen(linha)-1);
             fclose(f);
             return !strcmp(saved, senha);
         }
@@ -101,7 +112,7 @@ stock CarregarAdmin(playerid)
 
     while (fread(f, linha))
     {
-        if (!strncmp(linha, "Admin=", 6))
+        if (strn_cmp(linha, "Admin=", 6))
         {
             PlayerAdminLevel[playerid] = strval(linha[6]);
             break;
@@ -140,9 +151,9 @@ stock GetSenhaSalva(playerid, senha[], size)
 
     while (fread(f, linha))
     {
-        if (!strncmp(linha, "Senha=", 6))
+        if (strn_cmp(linha, "Senha=", 6))
         {
-            strmid(senha, linha, 6, strlen(linha) - 1);
+            strmid(senha, linha, 6, strlen(linha)-1);
             fclose(f);
             return 1;
         }
@@ -177,6 +188,13 @@ stock SalvarPosicao(playerid)
         GetPlayerVirtualWorld(playerid)
     );
     fclose(f);
+
+    // Atualiza variáveis do servidor
+    LastX[playerid] = x;
+    LastY[playerid] = y;
+    LastZ[playerid] = z;
+    LastInterior[playerid] = GetPlayerInterior(playerid);
+    LastVW[playerid] = GetPlayerVirtualWorld(playerid);
 }
 
 stock CarregarPosicao(playerid)
@@ -190,11 +208,11 @@ stock CarregarPosicao(playerid)
 
     while (fread(f, linha))
     {
-        if (!strncmp(linha, "X=", 2)) LastX[playerid] = floatstr(linha[2]);
-        else if (!strncmp(linha, "Y=", 2)) LastY[playerid] = floatstr(linha[2]);
-        else if (!strncmp(linha, "Z=", 2)) LastZ[playerid] = floatstr(linha[2]);
-        else if (!strncmp(linha, "Interior=", 9)) LastInterior[playerid] = strval(linha[9]);
-        else if (!strncmp(linha, "VW=", 3)) LastVW[playerid] = strval(linha[3]);
+        if (strn_cmp(linha, "X=", 2)) LastX[playerid] = floatstr(linha[2]);
+        else if (strn_cmp(linha, "Y=", 2)) LastY[playerid] = floatstr(linha[2]);
+        else if (strn_cmp(linha, "Z=", 2)) LastZ[playerid] = floatstr(linha[2]);
+        else if (strn_cmp(linha, "Interior=", 9)) LastInterior[playerid] = strval(linha[9]);
+        else if (strn_cmp(linha, "VW=", 3)) LastVW[playerid] = strval(linha[3]);
     }
     fclose(f);
 }
@@ -246,7 +264,7 @@ public OnPlayerDisconnect(playerid, reason)
 // =====================
 public OnPlayerSpawn(playerid)
 {
-    if (LastX[playerid] != 0.0)
+    if (LastX[playerid] != 0.0 || LastY[playerid] != 0.0 || LastZ[playerid] != 0.0)
     {
         SetPlayerInterior(playerid, LastInterior[playerid]);
         SetPlayerVirtualWorld(playerid, LastVW[playerid]);
@@ -295,7 +313,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 }
 
 // =====================
-// COMANDO ADMIN
+// ADMIN
 // =====================
 CMD:setadmin(playerid, params[])
 {
@@ -311,5 +329,39 @@ CMD:setadmin(playerid, params[])
 
     SendClientMessage(id, COR_VERDE, "Você recebeu admin!");
     SendClientMessage(playerid, COR_VERDE, "Admin definido.");
+    return 1;
+}
+
+// =====================
+// COMANDO SALVAR POSIÇÃO
+// =====================
+CMD:savepos(playerid, params[])
+{
+    if (!Logado[playerid])
+        return SendClientMessage(playerid, COR_VERMELHO, "Você precisa estar logado para salvar sua posição.");
+
+    SalvarPosicao(playerid);
+    SendClientMessage(playerid, COR_VERDE, "Posição salva com sucesso!");
+    return 1;
+}
+
+// =====================
+// SALVAR POSIÇÃO AUTOMÁTICA
+// =====================
+public OnPlayerDeath(playerid, killerid, reason)
+{
+    SalvarPosicao(playerid);
+    return 1;
+}
+
+public OnPlayerInteriorChange(playerid, newinterior, oldinterior)
+{
+    SalvarPosicao(playerid);
+    return 1;
+}
+
+public OnPlayerVirtualWorldChange(playerid, oldworld, newworld)
+{
+    SalvarPosicao(playerid);
     return 1;
 }
