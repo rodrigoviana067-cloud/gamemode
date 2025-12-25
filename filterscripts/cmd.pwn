@@ -1,6 +1,22 @@
 #include <a_samp>
 #include <zcmd>
 #include <sscanf2>
+#define MAX_CASAS 50
+
+enum cInfo {
+    Float:cX,
+    Float:cY,
+    Float:cZ,
+    Float:cIX,
+    Float:cIY,
+    Float:cIZ,
+    cInterior,
+    cPreco,
+    bool:cVendida,
+    cDono[MAX_PLAYER_NAME]
+};
+
+new Casa[MAX_CASAS][cInfo];
 
 // =====================
 // CORES
@@ -55,6 +71,31 @@ stock RegistrarConta(playerid, senha[])
 // =====================
 // CARREGAR CONTA
 // =====================
+stock SalvarCasa(id)
+{
+    new file[64];
+    CasaPath(id, file, sizeof(file));
+
+    dini_Create(file);
+    dini_FloatSet(file, "X", Casa[id][cX]);
+    dini_FloatSet(file, "Y", Casa[id][cY]);
+    dini_FloatSet(file, "Z", Casa[id][cZ]);
+
+    dini_FloatSet(file, "IX", Casa[id][cIX]);
+    dini_FloatSet(file, "IY", Casa[id][cIY]);
+    dini_FloatSet(file, "IZ", Casa[id][cIZ]);
+    dini_IntSet(file, "Interior", Casa[id][cInterior]);
+
+    dini_IntSet(file, "Preco", Casa[id][cPreco]);
+    dini_IntSet(file, "Vendida", Casa[id][cVendida]);
+    dini_Set(file, "Dono", Casa[id][cDono]);
+}
+
+stock CasaPath(id, dest[], size)
+{
+    format(dest, size, "scriptfiles/casas/casa_%d.ini", id);
+}
+
 stock CarregarConta(playerid)
 {
     new file[64];
