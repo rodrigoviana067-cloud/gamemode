@@ -1,35 +1,44 @@
 #include <a_samp>
 
-forward OnGameModeInit();
-forward OnPlayerConnect(playerid);
-forward OnPlayerRequestSpawn(playerid);
-forward OnPlayerCommandText(playerid, cmdtext[]);
-
-public OnGameModeInit() {
+public OnGameModeInit()
+{
     print("Gamemode iniciado!");
-    // SetMaxPlayers(100); <- Removido, use maxplayers no server.cfg
     SetGameModeText("Cidade RP Full");
-    SetTeamCount(0);
+
+    AddPlayerClass(
+        0,          // skin
+        1958.3783,  // x
+        1343.1572,  // y
+        15.3746,    // z
+        269.0,      // angle
+        0,0,0,0,0,0
+    );
+
     return 1;
 }
 
-public OnPlayerConnect(playerid) {
-    print("Player conectado: %d", playerid);
+public OnPlayerConnect(playerid)
+{
+    printf("Player conectado: %d", playerid);
     return 1;
 }
 
-public OnPlayerRequestSpawn(playerid) {
-    new Float:x = 0.0;
-    new Float:y = 0.0;
-    new Float:z = 3.0;
-    AddPlayerClass(0, x, y, z, 0.0, 0,0,0,0,0,0);
+public OnPlayerSpawn(playerid)
+{
+    SetPlayerPos(playerid, 1958.3783, 1343.1572, 15.3746);
+    SetPlayerFacingAngle(playerid, 269.0);
+    SetCameraBehindPlayer(playerid);
     return 1;
 }
 
-public OnPlayerCommandText(playerid, cmdtext[]) {
-    if(strcmp(cmdtext, "/meu dinheiro", true) == 0) {
+public OnPlayerCommandText(playerid, cmdtext[])
+{
+    if (strcmp(cmdtext, "/dinheiro", true) == 0)
+    {
         new money = GetPlayerMoney(playerid);
-        SendClientMessage(playerid, 0xFFFFFFFF, "Seu dinheiro: $%d", money);
+        new msg[64];
+        format(msg, sizeof(msg), "Seu dinheiro: $%d", money);
+        SendClientMessage(playerid, 0xFFFFFFFF, msg);
         return 1;
     }
     return 0;
