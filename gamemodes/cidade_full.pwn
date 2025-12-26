@@ -5,15 +5,32 @@
 #define DIALOG_REGISTER 2
 
 new bool:Logado[MAX_PLAYERS];
-new SenhaTentativa[MAX_PLAYERS][32];
 
-stock ContaPath(playerid)
+// =======================
+// FUNÇÃO DE CAMINHO
+// =======================
+stock ContaPath(playerid, path[], size)
 {
-    new nome[MAX_PLAYER_NAME], path[64];
+    new nome[MAX_PLAYER_NAME];
     GetPlayerName(playerid, nome, sizeof nome);
-    format(path, sizeof path, "Contas/%s.ini", nome);
-    return path;
+    format(path, size, "Contas/%s.ini", nome);
 }
+
+// =======================
+// PLAYER CONNECT
+// =======================
+public OnPlayerConnect(playerid)
+{
+    new path[64];
+    ContaPath(playerid, path, sizeof path);
+
+    if (dini_Exists(path))
+    {
+        ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
+            "Login",
+            "Digite sua senha:",
+            "Entrar", "Sair");
+    }
     else
     {
         ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD,
@@ -24,6 +41,9 @@ stock ContaPath(playerid)
     return 1;
 }
 
+// =======================
+// DIALOG RESPONSE
+// =======================
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
     if (!response)
@@ -31,6 +51,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         Kick(playerid);
         return 1;
     }
+
+    new path[64];
+    ContaPath(playerid, path, sizeof path);
 
     if (dialogid == DIALOG_REGISTER)
     {
@@ -43,10 +66,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
             return 1;
         }
 
-        dini_Create(ContaPath(playerid));
-        dini_Set(ContaPath(playerid), "Senha", inputtext);
-        dini_IntSet(ContaPath(playerid), "Dinheiro", 500);
-        dini_IntSet(ContaPath(playerid), "Admin", 0);
+        dini_Create(path);
+        dini_Set(path, "Senha", inputtext);
+        dini_IntSet(path, "Dinheiro", 500);
+        dini_IntSet(path, "Admin", 0);
 
         Logado[playerid] = true;
         GivePlayerMoney(playerid, 500);
@@ -59,13 +82,13 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if (dialogid == DIALOG_LOGIN)
     {
         new senhaSalva[32];
-        dini_Get(ContaPath(playerid), "Senha", senhaSalva);
+        dini_Get(path, "Senha", senhaSalva);
 
         if (!strcmp(inputtext, senhaSalva, false))
         {
             Logado[playerid] = true;
 
-            new money = dini_Int(ContaPath(playerid), "Dinheiro");
+            new money = dini_Int(path, "Dinheiro");
             ResetPlayerMoney(playerid);
             GivePlayerMoney(playerid, money);
 
@@ -73,7 +96,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
             SpawnPlayer(playerid);
         }
         else
-
         {
             ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
                 "Login",
@@ -85,6 +107,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     return 0;
 }
 
+// =======================
+// BLOQUEAR SPAWN SEM LOGIN
+// =======================
 public OnPlayerRequestSpawn(playerid)
 {
     if (!Logado[playerid])
@@ -95,30 +120,30 @@ public OnPlayerRequestSpawn(playerid)
     return 1;
 }
 
+// =======================
+// SALVAR AO SAIR
+// =======================
 public OnPlayerDisconnect(playerid, reason)
 {
     if (Logado[playerid])
     {
-        dini_IntSet(ContaPath(playerid), "Dinheiro", GetPlayerMoney(playerid));
+        new path[64];
+        ContaPath(playerid, path, sizeof path);
+        dini_IntSet(path, "Dinheiro", GetPlayerMoney(playerid));
     }
     return 1;
 }
 
+// =======================
+// GAMEMODE INIT
+// =======================
 public OnGameModeInit()
 {
     print("Gamemode iniciado!");
     SetGameModeText("Cidade RP Full");
-
-    AddPlayerClass(
-        0,          // skin
-        1958.3783,  // x
-        1343.1572,  // y
-        15.3746,    // z
-        269.0,      // angle
-        0,0,0,0,0,0
-    );
-
     return 1;
+}
+
 }
 
 public OnPlayerConnect(playerid)
