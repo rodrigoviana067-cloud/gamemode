@@ -14,24 +14,6 @@ stock ContaPath(playerid)
     format(path, sizeof path, "Contas/%s.ini", nome);
     return path;
 }
-
-public OnGameModeInit()
-{
-    SetGameModeText("Cidade RP");
-    return 1;
-}
-
-public OnPlayerConnect(playerid)
-{
-    Logado[playerid] = false;
-
-    if (dini_Exists(ContaPath(playerid)))
-    {
-        ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
-            "Login",
-            "Digite sua senha:",
-            "Entrar", "Sair");
-    }
     else
     {
         ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD,
