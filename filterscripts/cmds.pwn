@@ -1,20 +1,18 @@
 #include <a_samp>
 #include <zcmd>
 
-extern bool:Logado[MAX_PLAYERS];
-
+// ================= DINHEIRO =================
 CMD:dinheiro(playerid)
 {
-    if(!Logado[playerid]) return SendClientMessage(playerid, -1, "Logue primeiro.");
-    new s[64];
-    format(s, sizeof s, "Seu dinheiro: $%d", GetPlayerMoney(playerid));
-    SendClientMessage(playerid, -1, s);
+    new msg[64];
+    format(msg, sizeof msg, "Seu dinheiro: $%d", GetPlayerMoney(playerid));
+    SendClientMessage(playerid, -1, msg);
     return 1;
 }
 
+// ================= STATS ====================
 CMD:stats(playerid)
 {
-    if(!Logado[playerid]) return SendClientMessage(playerid, -1, "Logue primeiro.");
-    SendClientMessage(playerid, -1, "Sistema RP Full ativo.");
+    SendClientMessage(playerid, -1, "Cidade RP Full - Sistema ativo.");
     return 1;
 }
