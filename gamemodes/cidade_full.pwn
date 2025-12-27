@@ -31,6 +31,9 @@ new SpawnSkin[MAX_PLAYERS];
 #define SPAWN_VW 0
 #define SPAWN_SKIN 26
 
+// ================= FORWARD =================
+forward PlayerText3D:CreateDynamicBlip(Float:x, Float:y, Float:z, playerid);
+
 // ================= MAIN =================
 main()
 {
@@ -103,7 +106,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         dini_IntSet(path, "Celular", 1);
         dini_IntSet(path, "Emprego", 0);
 
-        // Spawn inicial
         SpawnX[playerid] = SPAWN_X;
         SpawnY[playerid] = SPAWN_Y;
         SpawnZ[playerid] = SPAWN_Z;
@@ -139,7 +141,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         PlayerAdmin[playerid] = dini_Int(path, "Admin");
         PlayerEmprego[playerid] = dini_Int(path, "Emprego");
 
-        // Carregar spawn salvo
         SpawnX[playerid] = dini_Float(path, "X");
         SpawnY[playerid] = dini_Float(path, "Y");
         SpawnZ[playerid] = dini_Float(path, "Z");
@@ -165,7 +166,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         }
         else if(listitem == 1)
         {
-            // GPS Menu
             ShowPlayerDialog(playerid, DIALOG_GPS, DIALOG_STYLE_LIST,
                 "GPS - Locais", "Aeroporto LS\nDowntown LS\nHospital\nPrefeitura", "Ir", "Fechar");
         }
@@ -187,14 +187,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         else if(listitem == 3) { x = 2500.0; y = 1500.0; z = 15.0; }
         else return 1;
 
-        // Remove GPS anterior
         if(PlayerGPS[playerid] != INVALID_PLAYER_ID)
         {
             DeletePlayer3DTextLabel(PlayerGPS[playerid]);
             PlayerGPS[playerid] = INVALID_PLAYER_ID;
         }
 
-        // Marca novo GPS
         PlayerGPS[playerid] = CreateDynamicBlip(x, y, z, playerid);
         SendClientMessage(playerid, 0x00FF00FF, "GPS atualizado! Confira o ponto no mapa.");
         return 1;
@@ -220,155 +218,6 @@ public OnPlayerSpawn(playerid)
     SetPlayerInterior(playerid, SpawnInt[playerid]);
     SetPlayerVirtualWorld(playerid, SpawnVW[playerid]);
     SetPlayerSkin(playerid, SpawnSkin[playerid]);
-    return 1;
-}
-
-// ================= COMANDOS =================
-CMD:dis(playerid, params[])
-{
-    if(!Logado[playerid]) return SendClientMessage(playerid, 0xFF0000FF, "Você precisa estar logado.");
-    if(!TemCelular[playerid]) return SendClientMessage(playerid, 0xFF0000FF, "Você não possui celular.");
-    if(isnull(params)) return SendClientMessage(playerid, 0xFFFF00FF, "Uso correto: /dis [mensagem]");
-
-    new nome[MAX_PLAYER_NAME], msg[144];
-    GetPlayerName(playerid, nome, sizeof(nome));
-    format(msg, sizeof(msg), "[DISPATCH] %s: %s", nome, params);
-
-    for(new i=0; i<MAX_PLAYERS; i++)
-        if(IsPlayerConnected(i) && TemCelular[i])
-            SendClientMessage(i, 0x00FF00FF, msg);
-
-    return 1;
-}
-
-CMD:menu(playerid, params[])
-{
-    ShowPlayerDialog(playerid, DIALOG_MENU, DIALOG_STYLE_LIST,
-        "Menu Cidade RP Full", 
-        "Empregos\nGPS\nCasas", "Selecionar", "Fechar");
-    return 1;
-}
-
-CMD:ajuda(playerid, params[])
-{
-    SendClientMessage(playerid, -1, "Comandos: /dis /ajuda /admins /setadmin /setmoney /ir /dinheiro /menu /comprarcasa /policial /medico /trabalhador /taxista");
-    return 1;
-}
-
-CMD:admins(playerid, params[])
-{
-    new texto[512], nome[MAX_PLAYER_NAME], c=0;
-    format(texto, sizeof(texto), "Admins online:\n");
-
-    for(new i=0; i<MAX_PLAYERS; i++)
-    {
-        if(IsPlayerConnected(i) && PlayerAdmin[i] > 0)
-        {
-            GetPlayerName(i, nome, sizeof(nome));
-            format(texto, sizeof(texto), "%s%s (Nivel %d)\n", texto, nome, PlayerAdmin[i]);
-            c++;
-        }
-    }
-
-    if(!c) return SendClientMessage(playerid, -1, "Nenhum admin online.");
-
-    ShowPlayerDialog(playerid, 2000, DIALOG_STYLE_MSGBOX, "Admins", texto, "OK", "");
-    return 1;
-}
-
-CMD:setadmin(playerid, params[])
-{
-    if(!IsAdmin(playerid, 5)) return 1;
-
-    new id, nivel;
-    if(sscanf(params, "dd", id, nivel)) return SendClientMessage(playerid, -1, "Uso correto: /setadmin [id] [nivel]");
-    if(!IsPlayerConnected(id)) return SendClientMessage(playerid, -1, "Jogador inválido.");
-
-    PlayerAdmin[id] = nivel;
-
-    new path[64];
-    ContaPath(id, path, sizeof(path));
-    dini_IntSet(path, "Admin", nivel);
-
-    SendClientMessage(playerid, -1, "Admin definido com sucesso.");
-    return 1;
-}
-
-CMD:setmoney(playerid, params[])
-{
-    if(!IsAdmin(playerid, 4)) return 1;
-
-    new id, valor;
-    if(sscanf(params, "dd", id, valor)) return SendClientMessage(playerid, -1, "Uso correto: /setmoney [id] [valor]");
-
-    ResetPlayerMoney(id);
-    GivePlayerMoney(id, valor);
-    return 1;
-}
-
-CMD:ir(playerid, params[])
-{
-    if(!IsAdmin(playerid, 3)) return 1;
-
-    new id;
-    if(sscanf(params, "d", id)) return SendClientMessage(playerid, -1, "Uso correto: /ir [id]");
-    if(!IsPlayerConnected(id)) return SendClientMessage(playerid, -1, "Jogador inválido.");
-
-    new Float:x, y, z;
-    GetPlayerPos(id, x, y, z);
-    SetPlayerPos(playerid, x+1.0, y, z);
-    return 1;
-}
-
-CMD:dinheiro(playerid)
-{
-    new msg[64];
-    format(msg, sizeof(msg), "Seu dinheiro: $%d", GetPlayerMoney(playerid));
-    SendClientMessage(playerid, -1, msg);
-    return 1;
-}
-
-// ================= SAVE =================
-public OnPlayerDisconnect(playerid, reason)
-{
-    if(!Logado[playerid]) return 1;
-
-    new path[64];
-    new Float:x, y, z;
-    ContaPath(playerid, path, sizeof(path));
-
-    GetPlayerPos(playerid, x, y, z);
-
-    dini_IntSet(path, "Dinheiro", GetPlayerMoney(playerid));
-    dini_IntSet(path, "Celular", TemCelular[playerid]);
-    dini_IntSet(path, "Admin", PlayerAdmin[playerid]);
-    dini_IntSet(path, "Emprego", PlayerEmprego[playerid]);
-
-    dini_FloatSet(path, "X", x);
-    dini_FloatSet(path, "Y", y);
-    dini_FloatSet(path, "Z", z);
-    dini_IntSet(path, "Interior", GetPlayerInterior(playerid));
-    dini_IntSet(path, "VW", GetPlayerVirtualWorld(playerid));
-    dini_IntSet(path, "Skin", GetPlayerSkin(playerid));
-
-    // Remove GPS se existir
-    if(PlayerGPS[playerid] != INVALID_PLAYER_ID)
-        DeletePlayer3DTextLabel(PlayerGPS[playerid]);
-
-    return 1;
-}
-
-// ================= INIT =================
-public OnGameModeInit()
-{
-    SetGameModeText("Cidade RP Full");
-    return 1;
-}
-
-// ================= ANTI UNKNOWN COMMAND =================
-public OnPlayerCommandText(playerid, cmdtext[])
-{
-    SendClientMessage(playerid, 0xFF0000FF, "ERRO: Comando inexistente. Use /ajuda.");
     return 1;
 }
 
