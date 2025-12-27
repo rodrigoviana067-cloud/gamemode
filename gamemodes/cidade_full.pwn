@@ -203,7 +203,7 @@ CMD:ajuda(playerid, params[])
 CMD:admins(playerid, params[])
 {
     new texto[512], nome[MAX_PLAYER_NAME], c = 0;
-    strcpy(texto, "Admins online:\n");
+    format(texto, sizeof texto, "Admins online:\n"); // substitui strcpy
 
     for(new i = 0; i < MAX_PLAYERS; i++)
     {
@@ -214,6 +214,13 @@ CMD:admins(playerid, params[])
             c++;
         }
     }
+
+    if(!c) return SendClientMessage(playerid, -1, "Nenhum admin online.");
+
+    ShowPlayerDialog(playerid, 2000, DIALOG_STYLE_MSGBOX, "Admins", texto, "OK", "");
+    return 1;
+}
+
 
     if(!c) return SendClientMessage(playerid, -1, "Nenhum admin online.");
 
