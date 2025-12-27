@@ -89,6 +89,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     new path[64];
     ContaPath(playerid, path, sizeof path);
 
+    // Registro
     if(dialogid == DIALOG_REGISTER)
     {
         dini_Create(path);
@@ -98,7 +99,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         dini_IntSet(path, "Celular", 1);
         dini_IntSet(path, "Emprego", 0);
 
-        // Spawn inicial no aeroporto de LS
+        // Spawn inicial
         SpawnX[playerid] = SPAWN_X;
         SpawnY[playerid] = SPAWN_Y;
         SpawnZ[playerid] = SPAWN_Z;
@@ -115,6 +116,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         return 1;
     }
 
+    // Login
     if(dialogid == DIALOG_LOGIN)
     {
         new senha[32];
@@ -149,24 +151,29 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         return 1;
     }
 
-    // Menu principal
+    // Menu principal (substituí switch/case por if/else)
     if(dialogid == DIALOG_MENU)
     {
         if(listitem == 0)
-{
-    SendClientMessage(playerid, 0xFFFF00FF, "Lista de empregos disponíveis:");
-    SendClientMessage(playerid, 0xFFFF00FF, "/policial /medico /trabalhador /taxista");
-}
-else if(listitem == 1)
-{
-    SendClientMessage(playerid, 0xFFFF00FF, "GPS de locais importantes:");
-    SendClientMessage(playerid, 0xFFFF00FF, "Aeroporto LS: 1702.5,328.5,10.0");
-    SendClientMessage(playerid, 0xFFFF00FF, "Downtown LS: 500.0,-1000.0,20.0");
-}
-else if(listitem == 2)
-{
-    SendClientMessage(playerid, 0xFFFF00FF, "Propriedades e casas disponíveis:");
-    SendClientMessage(playerid, 0xFFFF00FF, "Compre casas com /comprarcasa");
+        {
+            SendClientMessage(playerid, 0xFFFF00FF, "Lista de empregos disponíveis:");
+            SendClientMessage(playerid, 0xFFFF00FF, "/policial /medico /trabalhador /taxista");
+        }
+        else if(listitem == 1)
+        {
+            SendClientMessage(playerid, 0xFFFF00FF, "GPS de locais importantes:");
+            SendClientMessage(playerid, 0xFFFF00FF, "Aeroporto LS: 1702.5,328.5,10.0");
+            SendClientMessage(playerid, 0xFFFF00FF, "Downtown LS: 500.0,-1000.0,20.0");
+        }
+        else if(listitem == 2)
+        {
+            SendClientMessage(playerid, 0xFFFF00FF, "Propriedades e casas disponíveis:");
+            SendClientMessage(playerid, 0xFFFF00FF, "Compre casas com /comprarcasa");
+        }
+        return 1;
+    }
+
+    return 0;
 }
 
 // ================= SPAWN =================
@@ -229,7 +236,7 @@ CMD:admins(playerid, params[])
 {
     new texto[512], nome[MAX_PLAYER_NAME], c=0;
     format(texto, sizeof texto, "Admins online:\n");
-
+ }
     for(new i=0; i<MAX_PLAYERS; i++)
     {
         if(IsPlayerConnected(i) && PlayerAdmin[i] > 0)
@@ -239,7 +246,7 @@ CMD:admins(playerid, params[])
             c++;
         }
     }
-
+{
     if(!c) return SendClientMessage(playerid, -1, "Nenhum admin online.");
 
     ShowPlayerDialog(playerid, 2000, DIALOG_STYLE_MSGBOX, "Admins", texto, "OK", "");
