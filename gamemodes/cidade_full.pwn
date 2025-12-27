@@ -6,6 +6,12 @@
 
 new bool:Logado[MAX_PLAYERS];
 
+// ================= MAIN =================
+main()
+{
+    print("Gamemode cidade_full carregado.");
+}
+
 // ================= PATH =================
 stock ContaPath(playerid, path[], size)
 {
@@ -19,6 +25,8 @@ public OnPlayerConnect(playerid)
 {
     Logado[playerid] = false;
     ResetPlayerMoney(playerid);
+
+    TogglePlayerControllable(playerid, false);
 
     new path[64];
     ContaPath(playerid, path, sizeof path);
@@ -59,6 +67,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         dini_IntSet(path, "Skin", 26);
 
         Logado[playerid] = true;
+        TogglePlayerControllable(playerid, true);
         SpawnPlayer(playerid);
         return 1;
     }
@@ -71,6 +80,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         if(!strcmp(inputtext, senha, false))
         {
             Logado[playerid] = true;
+            TogglePlayerControllable(playerid, true);
 
             SetPlayerPos(playerid,
                 dini_Float(path, "X"),
@@ -85,6 +95,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
             GivePlayerMoney(playerid, dini_Int(path, "Dinheiro"));
 
             SpawnPlayer(playerid);
+        }
+        else
+        {
+            SendClientMessage(playerid, -1, "Senha incorreta!");
+            ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
+                "Login", "Digite sua senha:", "Entrar", "Sair");
         }
         return 1;
     }
@@ -111,6 +127,7 @@ public OnPlayerDisconnect(playerid, reason)
     return 1;
 }
 
+// ================= INIT =================
 public OnGameModeInit()
 {
     SetGameModeText("Cidade RP Full");
