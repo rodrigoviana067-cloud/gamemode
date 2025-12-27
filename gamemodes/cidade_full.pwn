@@ -155,20 +155,24 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     // Menu principal
     if(dialogid == DIALOG_MENU)
     {
-        if(listitem == 0)
+        if(listitem == 0) // Empregos
         {
             SendClientMessage(playerid, 0xFFFF00FF, "Lista de empregos disponíveis:");
-            SendClientMessage(playerid, 0xFFFF00FF, "/policial /medico /trabalhador /taxista");
+            SendClientMessage(playerid, 0xFFFF00FF, "/policia /medico /taxi /mecanico");
         }
         else if(listitem == 1) // GPS informativo
         {
-            SendClientMessage(playerid, 0x00FF00FF, "Pontos de referência da cidade:");
-            SendClientMessage(playerid, 0x00FF00FF, "Spawn: 1702.5, 328.5, 10.0");
-            SendClientMessage(playerid, 0x00FF00FF, "Downtown: 500.0, -1000.0, 20.0");
+            SendClientMessage(playerid, 0x00FF00FF, "=== Pontos importantes da Cidade ===");
+            SendClientMessage(playerid, 0x00FF00FF, "Spawn Inicial: 1702.5, 328.5, 10.0");
             SendClientMessage(playerid, 0x00FF00FF, "Hospital: 2000.0, 1000.0, 15.0");
             SendClientMessage(playerid, 0x00FF00FF, "Prefeitura: 2500.0, 1500.0, 15.0");
+            SendClientMessage(playerid, 0x00FF00FF, "Loja de Armas: 2100.0, 950.0, 15.0");
+            SendClientMessage(playerid, 0x00FF00FF, "Loja de Veículos: 1800.0, 1200.0, 15.0");
+            SendClientMessage(playerid, 0x00FF00FF, "Prisão: 2300.0, 1400.0, 15.0");
+            SendClientMessage(playerid, 0x00FF00FF, "Safe Zone Prefeitura: 2500.0, 1500.0, 15.0");
+            SendClientMessage(playerid, 0x00FF00FF, "=== Fim do GPS Informativo ===");
         }
-        else if(listitem == 2)
+        else if(listitem == 2) // Casas
         {
             SendClientMessage(playerid, 0xFFFF00FF, "Propriedades e casas disponíveis:");
             SendClientMessage(playerid, 0xFFFF00FF, "Compre casas com /comprarcasa");
@@ -229,10 +233,11 @@ CMD:menu(playerid, params[])
 
 CMD:ajuda(playerid, params[])
 {
-    SendClientMessage(playerid, -1, "Comandos: /dis /ajuda /admins /setadmin /setmoney /ir /dinheiro /menu /comprarcasa /policial /medico /trabalhador /taxista");
+    SendClientMessage(playerid, -1, "Comandos: /dis /ajuda /admins /setadmin /setmoney /ir /dinheiro /menu /comprarcasa /policia /medico /taxi /mecanico");
     return 1;
 }
 
+// Outros comandos de admin
 CMD:admins(playerid, params[])
 {
     new texto[512], nome[MAX_PLAYER_NAME], c=0;
