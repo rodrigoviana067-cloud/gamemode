@@ -27,7 +27,7 @@ new SpawnSkin[MAX_PLAYERS];
 #define SPAWN_Z 10.0
 #define SPAWN_INT 0
 #define SPAWN_VW 0
-#define SPAWN_SKIN 26  // Skin masculina padrão RP
+#define SPAWN_SKIN 26
 
 // ================= MAIN =================
 main()
@@ -72,12 +72,12 @@ public OnPlayerConnect(playerid)
     if(dini_Exists(path))
     {
         ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
-            "Login", "Digite sua senha:", "Entrar");
+            "Login", "Digite sua senha:", "Entrar", "Sair");
     }
     else
     {
         ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD,
-            "Registro", "Crie sua senha:", "Registrar");
+            "Registro", "Crie sua senha:", "Registrar", "Sair");
     }
     return 1;
 }
@@ -125,7 +125,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         {
             SendClientMessage(playerid, 0xFF0000FF, "Senha incorreta!");
             ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
-                "Login", "Digite sua senha:", "Entrar");
+                "Login", "Digite sua senha:", "Entrar", "Sair");
             return 1;
         }
 
@@ -156,24 +156,16 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         switch(listitem)
         {
             case 0:
-            {
                 SendClientMessage(playerid, 0xFFFF00FF, "Lista de empregos: /menu");
-                break;
-            }
-            case 1:
-            {
-                SendClientMessage(playerid, 0xFFFF00FF, "GPS de cidades e locais importantes.");
-                break;
-            }
-            case 2:
-            {
-                SendClientMessage(playerid, 0xFFFF00FF, "Propriedades e casas disponíveis.");
-                break;
-            }
-            default:
-            {
                 return 1;
-            }
+            case 1:
+                SendClientMessage(playerid, 0xFFFF00FF, "GPS de cidades e locais importantes.");
+                return 1;
+            case 2:
+                SendClientMessage(playerid, 0xFFFF00FF, "Propriedades e casas disponíveis.");
+                return 1;
+            default:
+                return 1;
         }
     }
 
