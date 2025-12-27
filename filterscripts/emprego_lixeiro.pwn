@@ -22,10 +22,6 @@ new Float:LixoPontos[MAX_LIXO_PONTOS][3] =
     {2100.0, -1900.0, 13.5}
 };
 
-new LixoAtual[MAX_PLAYERS];
-new Trabalhando[MAX_PLAYERS];
-new PlayerJob[MAX_PLAYERS];
-
 // =========================
 // INIT
 // =========================
