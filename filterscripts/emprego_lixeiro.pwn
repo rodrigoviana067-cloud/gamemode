@@ -4,6 +4,9 @@
 #define EMPREGO_NENHUM 0
 #define EMPREGO_LIXEIRO 1
 #define MAX_LIXO_PONTOS 3
+#define LIXO_VEHICLE 408 // Trashmaster
+
+new LixoTruck;
 
 new Float:LixoPontos[MAX_LIXO_PONTOS][3] =
 {
@@ -59,6 +62,31 @@ public OnPlayerEnterCheckpoint(playerid)
     return 1;
 }
 
+public OnFilterScriptInit()
+{
+    print("Emprego Lixeiro carregado.");
+
+    LixoTruck = CreateVehicle(
+        LIXO_VEHICLE,
+        2195.0, -1975.0, 13.5,
+        90.0,
+        1, 1,
+        -1
+    );
+
+    return 1
+}
+
+public OnPlayerEnterCheckpoint(playerid)
+{
+    if (!Trabalhando[playerid]) return 1;
+
+    if (!IsPlayerInVehicle(playerid, LixoTruck))
+    {
+        SendClientMessage(playerid, -1, "Volte para o caminhão de lixo.");
+        return 1;
+    }
+
 // =========================
 // PEGAR EMPREGO
 // =========================
@@ -78,6 +106,9 @@ CMD:iniciarlixo(playerid, params[])
     if (PlayerJob[playerid] != EMPREGO_LIXEIRO)
         return SendClientMessage(playerid, -1, "Você não é lixeiro.");
 
+    if (!IsPlayerInVehicle(playerid, LixoTruck))
+        return SendClientMessage(playerid, -1, "Você precisa estar no caminhão de lixo.");
+
     Trabalhando[playerid] = 1;
     LixoAtual[playerid] = 0;
 
@@ -86,10 +117,10 @@ CMD:iniciarlixo(playerid, params[])
         LixoPontos[0][0],
         LixoPontos[0][1],
         LixoPontos[0][2],
-        3.0
+        4.0
     );
 
-    SendClientMessage(playerid, -1, "Vá até o ponto de lixo marcado.");
+    SendClientMessage(playerid, -1, "Trabalho iniciado. Siga os pontos.");
     return 1;
 }
 
