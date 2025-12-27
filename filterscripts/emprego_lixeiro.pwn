@@ -118,4 +118,3 @@ CMD:sairdoemprego(playerid, params[])
     SendClientMessage(playerid, -1, "Você saiu do emprego.");
     return 1;
 }
-
