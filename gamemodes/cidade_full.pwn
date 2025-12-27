@@ -160,9 +160,13 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
             SendClientMessage(playerid, 0xFFFF00FF, "Lista de empregos disponíveis:");
             SendClientMessage(playerid, 0xFFFF00FF, "/policial /medico /trabalhador /taxista");
         }
-        else if(listitem == 1)
+        else if(listitem == 1) // GPS informativo
         {
-            SendClientMessage(playerid, 0xFFFF00FF, "GPS removido desta versão.");
+            SendClientMessage(playerid, 0x00FF00FF, "Pontos de referência da cidade:");
+            SendClientMessage(playerid, 0x00FF00FF, "Spawn: 1702.5, 328.5, 10.0");
+            SendClientMessage(playerid, 0x00FF00FF, "Downtown: 500.0, -1000.0, 20.0");
+            SendClientMessage(playerid, 0x00FF00FF, "Hospital: 2000.0, 1000.0, 15.0");
+            SendClientMessage(playerid, 0x00FF00FF, "Prefeitura: 2500.0, 1500.0, 15.0");
         }
         else if(listitem == 2)
         {
