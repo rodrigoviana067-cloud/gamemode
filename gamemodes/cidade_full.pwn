@@ -160,9 +160,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     {
         switch(listitem)
         {
-            case 0: SendClientMessage(playerid, 0xFFFF00FF, "Lista de empregos: /menu"); break;
-            case 1: SendClientMessage(playerid, 0xFFFF00FF, "GPS de cidades e locais importantes."); break;
-            case 2: SendClientMessage(playerid, 0xFFFF00FF, "Propriedades e casas disponíveis."); break;
+            case 0:
+SendClientMessage(playerid, 0xFFFF00FF, "Lista de empregos: /menu"); break;
+            case 1:
+SendClientMessage(playerid, 0xFFFF00FF, "GPS de cidades e locais importantes."); break;
+            case 2:
+SendClientMessage(playerid, 0xFFFF00FF, "Propriedades e casas disponíveis."); break;
             default: return 1;
         }
     }
