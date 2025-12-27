@@ -1,10 +1,12 @@
 #include <a_samp>
 #include <dini>
+#include <zcmd>
 
 #define DIALOG_LOGIN    1
 #define DIALOG_REGISTER 2
 
 new bool:Logado[MAX_PLAYERS];
+new TemCelular[MAX_PLAYERS];
 
 // ================= MAIN =================
 main()
@@ -24,8 +26,9 @@ stock ContaPath(playerid, path[], size)
 public OnPlayerConnect(playerid)
 {
     Logado[playerid] = false;
-    ResetPlayerMoney(playerid);
+    TemCelular[playerid] = 0;
 
+    ResetPlayerMoney(playerid);
     TogglePlayerControllable(playerid, false);
 
     new path[64];
@@ -58,6 +61,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         dini_Set(path, "Senha", inputtext);
         dini_IntSet(path, "Dinheiro", 500);
         dini_IntSet(path, "Admin", 0);
+        dini_IntSet(path, "Celular", 1); // começa com celular
 
         dini_FloatSet(path, "X", 1958.3783);
         dini_FloatSet(path, "Y", 1343.1572);
@@ -67,6 +71,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         dini_IntSet(path, "Skin", 26);
 
         Logado[playerid] = true;
+        TemCelular[playerid] = 1;
+
         TogglePlayerControllable(playerid, true);
         SpawnPlayer(playerid);
         return 1;
@@ -80,6 +86,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         if(!strcmp(inputtext, senha, false))
         {
             Logado[playerid] = true;
+            TemCelular[playerid] = dini_Int(path, "Celular");
+
             TogglePlayerControllable(playerid, true);
 
             SetPlayerPos(playerid,
@@ -98,13 +106,41 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         }
         else
         {
-            SendClientMessage(playerid, -1, "Senha incorreta!");
+            SendClientMessage(playerid, 0xFF0000FF, "Senha incorreta!");
             ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
                 "Login", "Digite sua senha:", "Entrar", "Sair");
         }
         return 1;
     }
     return 0;
+}
+
+// ================= COMANDO /DIS =================
+CMD:dis(playerid, params[])
+{
+    if(!Logado[playerid])
+        return SendClientMessage(playerid, 0xFF0000FF, "Você precisa estar logado.");
+
+    if(!TemCelular[playerid])
+        return SendClientMessage(playerid, 0xFF0000FF, "Você não possui um celular.");
+
+    if(isnull(params))
+        return SendClientMessage(playerid, 0xFFFF00FF, "Uso correto: /dis [mensagem]");
+
+    new nome[MAX_PLAYER_NAME];
+    new msg[144];
+    GetPlayerName(playerid, nome, sizeof nome);
+
+    format(msg, sizeof msg, "[DISPATCH] %s: %s", nome, params);
+
+    for(new i = 0; i < MAX_PLAYERS; i++)
+    {
+        if(IsPlayerConnected(i) && TemCelular[i])
+        {
+            SendClientMessage(i, 0x00FF00FF, msg);
+        }
+    }
+    return 1;
 }
 
 // ================= SAVE =================
@@ -118,6 +154,8 @@ public OnPlayerDisconnect(playerid, reason)
     GetPlayerPos(playerid, x, y, z);
 
     dini_IntSet(path, "Dinheiro", GetPlayerMoney(playerid));
+    dini_IntSet(path, "Celular", TemCelular[playerid]);
+
     dini_FloatSet(path, "X", x);
     dini_FloatSet(path, "Y", y);
     dini_FloatSet(path, "Z", z);
