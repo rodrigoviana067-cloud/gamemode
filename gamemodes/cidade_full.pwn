@@ -14,7 +14,7 @@ new bool:Logado[MAX_PLAYERS];
 new TemCelular[MAX_PLAYERS];
 new PlayerAdmin[MAX_PLAYERS];
 new PlayerEmprego[MAX_PLAYERS];
-new PlayerText3D:PlayerGPS[MAX_PLAYERS]; // GPS atual do jogador, 0 = sem blip
+new PlayerGPS[MAX_PLAYERS]; // Blip atual do jogador
 
 new Float:SpawnX[MAX_PLAYERS];
 new Float:SpawnY[MAX_PLAYERS];
@@ -64,7 +64,7 @@ public OnPlayerConnect(playerid)
     TemCelular[playerid] = 0;
     PlayerAdmin[playerid] = 0;
     PlayerEmprego[playerid] = 0;
-    PlayerGPS[playerid] = 0; // Nenhum blip no começo
+    PlayerGPS[playerid] = 0;
 
     TogglePlayerControllable(playerid, false);
     ResetPlayerMoney(playerid);
@@ -93,7 +93,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     new path[64];
     ContaPath(playerid, path, sizeof(path));
 
-    // ---------------- REGISTRO ----------------
+    // Registro
     if(dialogid == DIALOG_REGISTER)
     {
         dini_Create(path);
@@ -120,7 +120,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         return 1;
     }
 
-    // ---------------- LOGIN ----------------
+    // Login
     if(dialogid == DIALOG_LOGIN)
     {
         new senha[32];
@@ -155,7 +155,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         return 1;
     }
 
-    // ---------------- MENU ----------------
+    // Menu principal
     if(dialogid == DIALOG_MENU)
     {
         if(listitem == 0)
@@ -177,25 +177,21 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         return 1;
     }
 
-    // ---------------- GPS ----------------
+    // GPS Selection
     if(dialogid == DIALOG_GPS)
     {
         new Float:x, y, z;
-        if(listitem == 0) { x = 1702.5; y = 328.5; z = 10.0; }   // Aeroporto
-        else if(listitem == 1) { x = 500.0; y = -1000.0; z = 20.0; } // Downtown
-        else if(listitem == 2) { x = 2000.0; y = 1000.0; z = 15.0; } // Hospital
-        else if(listitem == 3) { x = 2500.0; y = 1500.0; z = 15.0; } // Prefeitura
+        if(listitem == 0) { x = 1702.5; y = 328.5; z = 10.0; }       // Aeroporto LS
+        else if(listitem == 1) { x = 500.0; y = -1000.0; z = 20.0; }  // Downtown LS
+        else if(listitem == 2) { x = 2000.0; y = 1000.0; z = 15.0; }  // Hospital
+        else if(listitem == 3) { x = 2500.0; y = 1500.0; z = 15.0; }  // Prefeitura
         else return 1;
 
-        // Remove antigo blip se existir
+        // Marca o GPS no mapa
         if(PlayerGPS[playerid] != 0)
-        {
-            DeletePlayer3DTextLabel(PlayerGPS[playerid]);
-            PlayerGPS[playerid] = 0;
-        }
+            DestroyPlayer3DTextLabel(PlayerGPS[playerid]);
 
-        // Cria novo blip
-        PlayerGPS[playerid] = CreateDynamicBlip(x, y, z, playerid);
+        PlayerGPS[playerid] = CreatePlayer3DTextLabel("GPS", x, y, z+1.0, 0xFF0000FF, playerid, 999.0, 0);
         SendClientMessage(playerid, 0x00FF00FF, "GPS atualizado! Confira o ponto no mapa.");
         return 1;
     }
@@ -246,7 +242,7 @@ CMD:dis(playerid, params[])
 CMD:menu(playerid, params[])
 {
     ShowPlayerDialog(playerid, DIALOG_MENU, DIALOG_STYLE_LIST,
-        "Menu Cidade RP Full",
+        "Menu Cidade RP Full", 
         "Empregos\nGPS\nCasas", "Selecionar", "Fechar");
     return 1;
 }
@@ -254,79 +250,6 @@ CMD:menu(playerid, params[])
 CMD:ajuda(playerid, params[])
 {
     SendClientMessage(playerid, -1, "Comandos: /dis /ajuda /admins /setadmin /setmoney /ir /dinheiro /menu /comprarcasa /policial /medico /trabalhador /taxista");
-    return 1;
-}
-
-CMD:admins(playerid, params[])
-{
-    new texto[512], nome[MAX_PLAYER_NAME], c=0;
-    format(texto, sizeof(texto), "Admins online:\n");
-
-    for(new i=0; i<MAX_PLAYERS; i++)
-    {
-        if(IsPlayerConnected(i) && PlayerAdmin[i] > 0)
-        {
-            GetPlayerName(i, nome, sizeof(nome));
-            format(texto, sizeof(texto), "%s%s (Nivel %d)\n", texto, nome, PlayerAdmin[i]);
-            c++;
-        }
-    }
-
-    if(!c) return SendClientMessage(playerid, -1, "Nenhum admin online.");
-
-    ShowPlayerDialog(playerid, 2000, DIALOG_STYLE_MSGBOX, "Admins", texto, "OK", "");
-    return 1;
-}
-
-CMD:setadmin(playerid, params[])
-{
-    if(!IsAdmin(playerid, 5)) return 1;
-
-    new id, nivel;
-    if(sscanf(params, "dd", id, nivel)) return SendClientMessage(playerid, -1, "Uso correto: /setadmin [id] [nivel]");
-    if(!IsPlayerConnected(id)) return SendClientMessage(playerid, -1, "Jogador inválido.");
-
-    PlayerAdmin[id] = nivel;
-
-    new path[64];
-    ContaPath(id, path, sizeof(path));
-    dini_IntSet(path, "Admin", nivel);
-
-    SendClientMessage(playerid, -1, "Admin definido com sucesso.");
-    return 1;
-}
-
-CMD:setmoney(playerid, params[])
-{
-    if(!IsAdmin(playerid, 4)) return 1;
-
-    new id, valor;
-    if(sscanf(params, "dd", id, valor)) return SendClientMessage(playerid, -1, "Uso correto: /setmoney [id] [valor]");
-
-    ResetPlayerMoney(id);
-    GivePlayerMoney(id, valor);
-    return 1;
-}
-
-CMD:ir(playerid, params[])
-{
-    if(!IsAdmin(playerid, 3)) return 1;
-
-    new id;
-    if(sscanf(params, "d", id)) return SendClientMessage(playerid, -1, "Uso correto: /ir [id]");
-    if(!IsPlayerConnected(id)) return SendClientMessage(playerid, -1, "Jogador inválido.");
-
-    new Float:x, y, z;
-    GetPlayerPos(id, x, y, z);
-    SetPlayerPos(playerid, x+1.0, y, z);
-    return 1;
-}
-
-CMD:dinheiro(playerid)
-{
-    new msg[64];
-    format(msg, sizeof(msg), "Seu dinheiro: $%d", GetPlayerMoney(playerid));
-    SendClientMessage(playerid, -1, msg);
     return 1;
 }
 
@@ -353,13 +276,6 @@ public OnPlayerDisconnect(playerid, reason)
     dini_IntSet(path, "VW", GetPlayerVirtualWorld(playerid));
     dini_IntSet(path, "Skin", GetPlayerSkin(playerid));
 
-    // Remove blip GPS se existir
-    if(PlayerGPS[playerid] != 0)
-    {
-        DeletePlayer3DTextLabel(PlayerGPS[playerid]);
-        PlayerGPS[playerid] = 0;
-    }
-
     return 1;
 }
 
@@ -375,10 +291,4 @@ public OnPlayerCommandText(playerid, cmdtext[])
 {
     SendClientMessage(playerid, 0xFF0000FF, "ERRO: Comando inexistente. Use /ajuda.");
     return 1;
-}
-
-// ================= FUNÇÃO AUXILIAR =================
-stock PlayerText3D:CreateDynamicBlip(Float:x, Float:y, Float:z, playerid)
-{
-    return CreatePlayer3DTextLabel("GPS", x, y, z+1.0, 0xFF0000FF, playerid, 999.0, 0);
 }
