@@ -1,7 +1,9 @@
 #include <a_samp>
 #include <zcmd>
 
-// ================= DINHEIRO =================
+// ======================
+// COMANDO DINHEIRO
+// ======================
 CMD:dinheiro(playerid)
 {
     new msg[64];
@@ -10,9 +12,11 @@ CMD:dinheiro(playerid)
     return 1;
 }
 
-// ================= STATS ====================
-CMD:stats(playerid)
+// ======================
+// COMANDO AJUDA
+// ======================
+CMD:ajuda(playerid)
 {
-    SendClientMessage(playerid, -1, "Cidade RP Full - Sistema ativo.");
+    SendClientMessage(playerid, -1, "Comandos: /dinheiro /ajuda");
     return 1;
 }
