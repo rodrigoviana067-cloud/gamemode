@@ -152,32 +152,21 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     // Menu principal
     if(dialogid == DIALOG_MENU)
     {
-        switch(listitem)
-        {
-            case 0:
-            {
-                SendClientMessage(playerid, 0xFFFF00FF, "Lista de empregos disponíveis:");
-                SendClientMessage(playerid, 0xFFFF00FF, "/policial /medico /trabalhador /taxista");
-                break;
-            }
-            case 1:
-            {
-                SendClientMessage(playerid, 0xFFFF00FF, "GPS de locais importantes:");
-                SendClientMessage(playerid, 0xFFFF00FF, "Aeroporto LS: 1702.5,328.5,10.0");
-                SendClientMessage(playerid, 0xFFFF00FF, "Downtown LS: 500.0,-1000.0,20.0");
-                break;
-            }
-            case 2:
-            {
-                SendClientMessage(playerid, 0xFFFF00FF, "Propriedades e casas disponíveis:");
-                SendClientMessage(playerid, 0xFFFF00FF, "Compre casas com /comprarcasa");
-                break;
-            }
-        }
-        return 1;
-    }
-
-    return 0;
+        if(listitem == 0)
+{
+    SendClientMessage(playerid, 0xFFFF00FF, "Lista de empregos disponíveis:");
+    SendClientMessage(playerid, 0xFFFF00FF, "/policial /medico /trabalhador /taxista");
+}
+else if(listitem == 1)
+{
+    SendClientMessage(playerid, 0xFFFF00FF, "GPS de locais importantes:");
+    SendClientMessage(playerid, 0xFFFF00FF, "Aeroporto LS: 1702.5,328.5,10.0");
+    SendClientMessage(playerid, 0xFFFF00FF, "Downtown LS: 500.0,-1000.0,20.0");
+}
+else if(listitem == 2)
+{
+    SendClientMessage(playerid, 0xFFFF00FF, "Propriedades e casas disponíveis:");
+    SendClientMessage(playerid, 0xFFFF00FF, "Compre casas com /comprarcasa");
 }
 
 // ================= SPAWN =================
