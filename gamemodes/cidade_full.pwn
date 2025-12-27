@@ -25,7 +25,7 @@ new SpawnSkin[MAX_PLAYERS];
 #define SPAWN_Z 10.0
 #define SPAWN_INT 0
 #define SPAWN_VW 0
-#define SPAWN_SKIN 26  // Skin masculina RP padrão
+#define SPAWN_SKIN 7  // Skin RP masculina padrão
 
 // ================= MAIN =================
 main()
@@ -79,7 +79,7 @@ public OnPlayerConnect(playerid)
     return 1;
 }
 
-// ================= DIALOG =================
+// ================= DIALOG RESPONSE =================
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
     if(!response) return Kick(playerid);
@@ -129,13 +129,23 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         TemCelular[playerid] = dini_Int(path, "Celular");
         PlayerAdmin[playerid] = dini_Int(path, "Admin");
 
-        // Carregar spawn salvo
+        // Carregar spawn salvo ou forçar aeroporto se inválido
         SpawnX[playerid] = dini_Float(path, "X");
         SpawnY[playerid] = dini_Float(path, "Y");
         SpawnZ[playerid] = dini_Float(path, "Z");
         SpawnInt[playerid] = dini_Int(path, "Interior");
         SpawnVW[playerid] = dini_Int(path, "VW");
         SpawnSkin[playerid] = dini_Int(path, "Skin");
+
+        if(SpawnX[playerid] == 0.0 && SpawnY[playerid] == 0.0)
+        {
+            SpawnX[playerid] = SPAWN_X;
+            SpawnY[playerid] = SPAWN_Y;
+            SpawnZ[playerid] = SPAWN_Z;
+            SpawnInt[playerid] = SPAWN_INT;
+            SpawnVW[playerid] = SPAWN_VW;
+            SpawnSkin[playerid] = SPAWN_SKIN;
+        }
 
         ResetPlayerMoney(playerid);
         GivePlayerMoney(playerid, dini_Int(path, "Dinheiro"));
@@ -144,23 +154,13 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         SpawnPlayer(playerid);
         return 1;
     }
+
     return 0;
 }
 
 // ================= SPAWN =================
 public OnPlayerSpawn(playerid)
 {
-    // Caso spawn não esteja definido, envia para aeroporto LS
-    if(SpawnX[playerid] == 0.0 && SpawnY[playerid] == 0.0)
-    {
-        SpawnX[playerid] = SPAWN_X;
-        SpawnY[playerid] = SPAWN_Y;
-        SpawnZ[playerid] = SPAWN_Z;
-        SpawnInt[playerid] = SPAWN_INT;
-        SpawnVW[playerid] = SPAWN_VW;
-        SpawnSkin[playerid] = SPAWN_SKIN;
-    }
-
     SetPlayerPos(playerid, SpawnX[playerid], SpawnY[playerid], SpawnZ[playerid]);
     SetPlayerInterior(playerid, SpawnInt[playerid]);
     SetPlayerVirtualWorld(playerid, SpawnVW[playerid]);
@@ -203,7 +203,7 @@ CMD:ajuda(playerid, params[])
 CMD:admins(playerid, params[])
 {
     new texto[512], nome[MAX_PLAYER_NAME], c = 0;
-    format(texto, sizeof texto, "Admins online:\n"); // substitui strcpy
+    format(texto, sizeof texto, "Admins online:\n");
 
     for(new i = 0; i < MAX_PLAYERS; i++)
     {
@@ -221,13 +221,7 @@ CMD:admins(playerid, params[])
     return 1;
 }
 
-
-    if(!c) return SendClientMessage(playerid, -1, "Nenhum admin online.");
-
-    ShowPlayerDialog(playerid, 2000, DIALOG_STYLE_MSGBOX, "Admins", texto, "OK", "");
-    return 1;
-}
-
+// ================= /SETADMIN =================
 CMD:setadmin(playerid, params[])
 {
     if(!IsAdmin(playerid, 5)) return 1;
@@ -249,6 +243,7 @@ CMD:setadmin(playerid, params[])
     return 1;
 }
 
+// ================= /SETMONEY =================
 CMD:setmoney(playerid, params[])
 {
     if(!IsAdmin(playerid, 4)) return 1;
@@ -257,11 +252,15 @@ CMD:setmoney(playerid, params[])
     if(sscanf(params, "dd", id, valor))
         return SendClientMessage(playerid, -1, "Uso correto: /setmoney [id] [valor]");
 
+    if(!IsPlayerConnected(id))
+        return SendClientMessage(playerid, -1, "Jogador inválido.");
+
     ResetPlayerMoney(id);
     GivePlayerMoney(id, valor);
     return 1;
 }
 
+// ================= /IR =================
 CMD:ir(playerid, params[])
 {
     if(!IsAdmin(playerid, 3)) return 1;
