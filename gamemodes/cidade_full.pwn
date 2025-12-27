@@ -6,9 +6,7 @@
 
 new bool:Logado[MAX_PLAYERS];
 
-// =======================
-// FUNÇÃO DE CAMINHO
-// =======================
+// ================= PATH =================
 stock ContaPath(playerid, path[], size)
 {
     new nome[MAX_PLAYER_NAME];
@@ -16,130 +14,105 @@ stock ContaPath(playerid, path[], size)
     format(path, size, "Contas/%s.ini", nome);
 }
 
-// =======================
-// PLAYER CONNECT
-// =======================
+// ================= CONNECT =================
 public OnPlayerConnect(playerid)
 {
+    Logado[playerid] = false;
+    ResetPlayerMoney(playerid);
+
     new path[64];
     ContaPath(playerid, path, sizeof path);
 
-    if (dini_Exists(path))
+    if(dini_Exists(path))
     {
         ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
-            "Login",
-            "Digite sua senha:",
-            "Entrar", "Sair");
+            "Login", "Digite sua senha:", "Entrar", "Sair");
     }
     else
     {
         ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD,
-            "Registro",
-            "Crie uma senha:",
-            "Registrar", "Sair");
+            "Registro", "Crie uma senha:", "Registrar", "Sair");
     }
     return 1;
 }
 
-// =======================
-// DIALOG RESPONSE
-// =======================
+// ================= DIALOG =================
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
-    if (!response)
-    {
-        Kick(playerid);
-        return 1;
-    }
+    if(!response) return Kick(playerid);
 
     new path[64];
     ContaPath(playerid, path, sizeof path);
 
-    if (dialogid == DIALOG_REGISTER)
+    if(dialogid == DIALOG_REGISTER)
     {
-        if (strlen(inputtext) < 3)
-        {
-            ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD,
-                "Registro",
-                "Senha muito curta.\nDigite outra:",
-                "Registrar", "Sair");
-            return 1;
-        }
-
         dini_Create(path);
         dini_Set(path, "Senha", inputtext);
         dini_IntSet(path, "Dinheiro", 500);
         dini_IntSet(path, "Admin", 0);
 
-        Logado[playerid] = true;
-        GivePlayerMoney(playerid, 500);
+        dini_FloatSet(path, "X", 1958.3783);
+        dini_FloatSet(path, "Y", 1343.1572);
+        dini_FloatSet(path, "Z", 15.3746);
+        dini_IntSet(path, "Interior", 0);
+        dini_IntSet(path, "VW", 0);
+        dini_IntSet(path, "Skin", 26);
 
-        SendClientMessage(playerid, -1, "Conta criada com sucesso!");
+        Logado[playerid] = true;
         SpawnPlayer(playerid);
         return 1;
     }
 
-    if (dialogid == DIALOG_LOGIN)
+    if(dialogid == DIALOG_LOGIN)
     {
-        new senhaSalva[32];
-        dini_Get(path, "Senha", senhaSalva);
+        new senha[32];
+        dini_Get(path, "Senha", senha);
 
-        if (!strcmp(inputtext, senhaSalva, false))
+        if(!strcmp(inputtext, senha, false))
         {
             Logado[playerid] = true;
 
-            new money = dini_Int(path, "Dinheiro");
-            ResetPlayerMoney(playerid);
-            GivePlayerMoney(playerid, money);
+            SetPlayerPos(playerid,
+                dini_Float(path, "X"),
+                dini_Float(path, "Y"),
+                dini_Float(path, "Z"));
 
-            SendClientMessage(playerid, -1, "Login efetuado com sucesso!");
+            SetPlayerInterior(playerid, dini_Int(path, "Interior"));
+            SetPlayerVirtualWorld(playerid, dini_Int(path, "VW"));
+            SetPlayerSkin(playerid, dini_Int(path, "Skin"));
+
+            ResetPlayerMoney(playerid);
+            GivePlayerMoney(playerid, dini_Int(path, "Dinheiro"));
+
             SpawnPlayer(playerid);
-        }
-        else
-        {
-            ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
-                "Login",
-                "Senha incorreta.\nDigite novamente:",
-                "Entrar", "Sair");
         }
         return 1;
     }
     return 0;
 }
 
-// =======================
-// BLOQUEAR SPAWN SEM LOGIN
-// =======================
-public OnPlayerRequestSpawn(playerid)
-{
-    if (!Logado[playerid])
-    {
-        SendClientMessage(playerid, -1, "Você precisa logar primeiro!");
-        return 0;
-    }
-    return 1;
-}
-
-// =======================
-// SALVAR AO SAIR
-// =======================
+// ================= SAVE =================
 public OnPlayerDisconnect(playerid, reason)
 {
-    if (Logado[playerid])
-    {
-        new path[64];
-        ContaPath(playerid, path, sizeof path);
-        dini_IntSet(path, "Dinheiro", GetPlayerMoney(playerid));
-    }
+    if(!Logado[playerid]) return 1;
+
+    new path[64], Float:x, Float:y, Float:z;
+    ContaPath(playerid, path, sizeof path);
+
+    GetPlayerPos(playerid, x, y, z);
+
+    dini_IntSet(path, "Dinheiro", GetPlayerMoney(playerid));
+    dini_FloatSet(path, "X", x);
+    dini_FloatSet(path, "Y", y);
+    dini_FloatSet(path, "Z", z);
+    dini_IntSet(path, "Interior", GetPlayerInterior(playerid));
+    dini_IntSet(path, "VW", GetPlayerVirtualWorld(playerid));
+    dini_IntSet(path, "Skin", GetPlayerSkin(playerid));
     return 1;
 }
 
-// =======================
-// GAMEMODE INIT
-// =======================
 public OnGameModeInit()
 {
-    print("Gamemode iniciado!");
     SetGameModeText("Cidade RP Full");
     return 1;
 }
