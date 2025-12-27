@@ -14,6 +14,7 @@ new bool:Logado[MAX_PLAYERS];
 new TemCelular[MAX_PLAYERS];
 new PlayerAdmin[MAX_PLAYERS];
 new PlayerEmprego[MAX_PLAYERS];
+new PlayerText3D:PlayerGPS[MAX_PLAYERS]; // GPS do jogador
 
 new Float:SpawnX[MAX_PLAYERS];
 new Float:SpawnY[MAX_PLAYERS];
@@ -22,16 +23,13 @@ new SpawnInt[MAX_PLAYERS];
 new SpawnVW[MAX_PLAYERS];
 new SpawnSkin[MAX_PLAYERS];
 
-// ================= GPS =================
-new PlayerGPS[MAX_PLAYERS]; // Blip atual do jogador
-
 // ================= SPAWN PADRÃO =================
 #define SPAWN_X 1702.5
 #define SPAWN_Y 328.5
 #define SPAWN_Z 10.0
 #define SPAWN_INT 0
 #define SPAWN_VW 0
-#define SPAWN_SKIN 26  // Skin masculina padrão RP
+#define SPAWN_SKIN 26
 
 // ================= MAIN =================
 main()
@@ -51,7 +49,7 @@ stock ContaPath(playerid, path[], size)
 // ================= ADMIN CHECK =================
 stock IsAdmin(playerid, level)
 {
-    if (PlayerAdmin[playerid] < level)
+    if(PlayerAdmin[playerid] < level)
     {
         SendClientMessage(playerid, 0xFF0000FF, "Você não tem permissão para este comando.");
         return 0;
@@ -74,7 +72,7 @@ public OnPlayerConnect(playerid)
     new path[64];
     ContaPath(playerid, path, sizeof(path));
 
-    if (dini_Exists(path))
+    if(dini_Exists(path))
     {
         ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
             "Login", "Digite sua senha:", "Entrar", "Sair");
@@ -90,7 +88,7 @@ public OnPlayerConnect(playerid)
 // ================= DIALOG RESPONSE =================
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
-    if (!response) return Kick(playerid);
+    if(!response) return Kick(playerid);
 
     new path[64];
     ContaPath(playerid, path, sizeof(path));
@@ -189,11 +187,15 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         else if(listitem == 3) { x = 2500.0; y = 1500.0; z = 15.0; }
         else return 1;
 
-        // Marca o GPS no mapa
+        // Remove GPS anterior
         if(PlayerGPS[playerid] != INVALID_PLAYER_ID)
-            RemovePlayerBlip(playerid, PlayerGPS[playerid]);
+        {
+            DeletePlayer3DTextLabel(PlayerGPS[playerid]);
+            PlayerGPS[playerid] = INVALID_PLAYER_ID;
+        }
 
-        PlayerGPS[playerid] = CreateDynamicBlip(x, y, z, 0, 0, playerid);
+        // Marca novo GPS
+        PlayerGPS[playerid] = CreateDynamicBlip(x, y, z, playerid);
         SendClientMessage(playerid, 0x00FF00FF, "GPS atualizado! Confira o ponto no mapa.");
         return 1;
     }
@@ -218,8 +220,6 @@ public OnPlayerSpawn(playerid)
     SetPlayerInterior(playerid, SpawnInt[playerid]);
     SetPlayerVirtualWorld(playerid, SpawnVW[playerid]);
     SetPlayerSkin(playerid, SpawnSkin[playerid]);
-
-    SendClientMessage(playerid, 0x00FF00FF, "Bem-vindo à Cidade RP Full!");
     return 1;
 }
 
@@ -351,6 +351,10 @@ public OnPlayerDisconnect(playerid, reason)
     dini_IntSet(path, "VW", GetPlayerVirtualWorld(playerid));
     dini_IntSet(path, "Skin", GetPlayerSkin(playerid));
 
+    // Remove GPS se existir
+    if(PlayerGPS[playerid] != INVALID_PLAYER_ID)
+        DeletePlayer3DTextLabel(PlayerGPS[playerid]);
+
     return 1;
 }
 
@@ -369,7 +373,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 }
 
 // ================= FUNÇÃO AUXILIAR =================
-stock CreateDynamicBlip(Float:x, Float:y, Float:z, type, color, playerid)
+stock PlayerText3D:CreateDynamicBlip(Float:x, Float:y, Float:z, playerid)
 {
-    return CreatePlayer3DTextLabel("GPS", x, y, z+1.0, 0xFF0000FF, playerid, 999.0, 0); // Blip simulado com 3D text
+    return CreatePlayer3DTextLabel("GPS", x, y, z+1.0, 0xFF0000FF, playerid, 999.0, 0);
 }
