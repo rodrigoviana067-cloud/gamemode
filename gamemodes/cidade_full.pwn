@@ -53,6 +53,18 @@ stock IsAdmin(playerid, level)
 }
 
 // ================= CONNECT =================
+public OnPlayerSpawn(playerid)
+{
+    SendClientMessage(playerid, 0x00FF00FF, "Spawn aplicado no aeroporto de LS!");
+
+    SetPlayerPos(playerid, SPAWN_X, SPAWN_Y, SPAWN_Z);
+    SetPlayerInterior(playerid, SPAWN_INT);
+    SetPlayerVirtualWorld(playerid, SPAWN_VW);
+    SetPlayerSkin(playerid, SPAWN_SKIN);
+
+    return 1;
+}
+
 public OnPlayerConnect(playerid)
 {
     Logado[playerid] = false;
