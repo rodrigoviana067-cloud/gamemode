@@ -1,5 +1,13 @@
 #include <a_samp>
 #include <zcmd>
+#include <dini>
+
+new PlayerJob[MAX_PLAYERS];
+new Trabalhando[MAX_PLAYERS];
+new LixoAtual[MAX_PLAYERS];
+
+// Definições de uniforme (Skin de lixeiro)
+#define SKIN_LIXEIRO 281 // exemplo: caminhoneiro/operário
 
 #define EMPREGO_NENHUM 0
 #define EMPREGO_LIXEIRO 1
@@ -38,7 +46,40 @@ public OnFilterScriptInit()
 
 public OnPlayerConnect(playerid)
 {
-    PlayerJob[playerid] = EMPREGO_NENHUM;
+    new path[64], emprego;
+    GetPlayerName(playerid, path, sizeof(path));
+    format(path, sizeof(path), "Contas/%s.ini", path);
+
+    // Carrega emprego salvo se existir
+    if (dini_Exists(path))
+    {
+        emprego = dini_Int(path, "Emprego");
+        PlayerJob[playerid] = emprego;
+    }
+    else
+    {
+        PlayerJob[playerid] = EMPREGO_NENHUM;
+    }
+
+    Trabalhando[playerid] = 0;
+    LixoAtual[playerid] = 0;
+
+    return 1;
+}
+
+public OnPlayerDisconnect(playerid, reason)
+{
+    new path[64], money;
+    GetPlayerName(playerid, path, sizeof(path));
+    format(path, sizeof(path), "Contas/%s.ini", path);
+
+    // Salva dinheiro
+    money = GetPlayerMoney(playerid);
+    dini_IntSet(path, "Dinheiro", money);
+
+    // Salva emprego
+    dini_IntSet(path, "Emprego", PlayerJob[playerid]);
+
     return 1;
 }
 
@@ -107,6 +148,9 @@ CMD:iniciarlixo(playerid, params[])
     Trabalhando[playerid] = 1;
     LixoAtual[playerid] = 0;
 
+    // Aplica uniforme
+    SetPlayerSkin(playerid, SKIN_LIXEIRO);
+
     SetPlayerCheckpoint(
         playerid,
         LixoPontos[0][0],
@@ -140,6 +184,9 @@ CMD:sairdoemprego(playerid, params[])
     PlayerJob[playerid] = EMPREGO_NENHUM;
     Trabalhando[playerid] = 0;
     DisablePlayerCheckpoint(playerid);
+
+    // Retorna skin padrão (pode ser ajustada conforme preferir)
+    SetPlayerSkin(playerid, 0); 
 
     SendClientMessage(playerid, -1, "Você saiu do emprego.");
     return 1;
