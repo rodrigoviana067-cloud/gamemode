@@ -27,7 +27,7 @@ new SpawnSkin[MAX_PLAYERS];
 #define SPAWN_Z 10.0
 #define SPAWN_INT 0
 #define SPAWN_VW 0
-#define SPAWN_SKIN 26
+#define SPAWN_SKIN 26  // Skin masculina padrão RP
 
 // ================= MAIN =================
 main()
@@ -48,8 +48,7 @@ stock IsAdmin(playerid, level)
 {
     if(PlayerAdmin[playerid] < level)
     {
-        SendClientMessage(playerid, 0xFF0000FF,
-            "Você não tem permissão para este comando.");
+        SendClientMessage(playerid, 0xFF0000FF, "Você não tem permissão para este comando.");
         return 0;
     }
     return 1;
@@ -156,17 +155,26 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         switch(listitem)
         {
             case 0:
-                SendClientMessage(playerid, 0xFFFF00FF, "Lista de empregos: /menu");
-                return 1;
+            {
+                SendClientMessage(playerid, 0xFFFF00FF, "Lista de empregos disponíveis:");
+                SendClientMessage(playerid, 0xFFFF00FF, "/policial /medico /trabalhador /taxista");
+                break;
+            }
             case 1:
-                SendClientMessage(playerid, 0xFFFF00FF, "GPS de cidades e locais importantes.");
-                return 1;
+            {
+                SendClientMessage(playerid, 0xFFFF00FF, "GPS de locais importantes:");
+                SendClientMessage(playerid, 0xFFFF00FF, "Aeroporto LS: 1702.5,328.5,10.0");
+                SendClientMessage(playerid, 0xFFFF00FF, "Downtown LS: 500.0,-1000.0,20.0");
+                break;
+            }
             case 2:
-                SendClientMessage(playerid, 0xFFFF00FF, "Propriedades e casas disponíveis.");
-                return 1;
-            default:
-                return 1;
+            {
+                SendClientMessage(playerid, 0xFFFF00FF, "Propriedades e casas disponíveis:");
+                SendClientMessage(playerid, 0xFFFF00FF, "Compre casas com /comprarcasa");
+                break;
+            }
         }
+        return 1;
     }
 
     return 0;
@@ -192,19 +200,15 @@ public OnPlayerSpawn(playerid)
 
     SendClientMessage(playerid, 0x00FF00FF,
         "Bem-vindo à Cidade RP Full! Explore, divirta-se e respeite as regras.");
-
     return 1;
 }
 
 // ================= COMANDOS =================
 CMD:dis(playerid, params[])
 {
-    if(!Logado[playerid])
-        return SendClientMessage(playerid, 0xFF0000FF, "Você precisa estar logado.");
-    if(!TemCelular[playerid])
-        return SendClientMessage(playerid, 0xFF0000FF, "Você não possui celular.");
-    if(isnull(params))
-        return SendClientMessage(playerid, 0xFFFF00FF, "Uso correto: /dis [mensagem]");
+    if(!Logado[playerid]) return SendClientMessage(playerid, 0xFF0000FF, "Você precisa estar logado.");
+    if(!TemCelular[playerid]) return SendClientMessage(playerid, 0xFF0000FF, "Você não possui celular.");
+    if(isnull(params)) return SendClientMessage(playerid, 0xFFFF00FF, "Uso correto: /dis [mensagem]");
 
     new nome[MAX_PLAYER_NAME], msg[144];
     GetPlayerName(playerid, nome, sizeof nome);
@@ -217,18 +221,18 @@ CMD:dis(playerid, params[])
     return 1;
 }
 
-CMD:ajuda(playerid, params[])
-{
-    SendClientMessage(playerid, -1,
-        "Comandos disponíveis: /dis /ajuda /admins /setadmin /setmoney /ir /dinheiro /menu");
-    return 1;
-}
-
 CMD:menu(playerid, params[])
 {
     ShowPlayerDialog(playerid, DIALOG_MENU, DIALOG_STYLE_LIST,
         "Menu Cidade RP Full", 
         "Empregos\nGPS\nCasas", "Selecionar", "Fechar");
+    return 1;
+}
+
+CMD:ajuda(playerid, params[])
+{
+    SendClientMessage(playerid, -1,
+        "Comandos: /dis /ajuda /admins /setadmin /setmoney /ir /dinheiro /menu /comprarcasa /policial /medico /trabalhador /taxista");
     return 1;
 }
 
@@ -345,7 +349,6 @@ public OnGameModeInit()
 // ================= ANTI UNKNOWN COMMAND =================
 public OnPlayerCommandText(playerid, cmdtext[])
 {
-    SendClientMessage(playerid, 0xFF0000FF,
-        "ERRO: Comando inexistente. Use /ajuda.");
+    SendClientMessage(playerid, 0xFF0000FF, "ERRO: Comando inexistente. Use /ajuda.");
     return 1;
 }
