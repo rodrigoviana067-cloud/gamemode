@@ -101,8 +101,12 @@ public OnFilterScriptInit()
 
     for(new i = 0; i < MAX_HOUSES; i++)
     {
-        PlayerHouse[i] = -1;
         LoadHouse(i);
+    }
+
+    for(new p = 0; p < MAX_PLAYERS; p++)
+    {
+        PlayerHouse[p] = -1;
     }
     return 1;
 }
