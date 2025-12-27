@@ -25,7 +25,7 @@ new SpawnSkin[MAX_PLAYERS];
 #define SPAWN_Z 10.0
 #define SPAWN_INT 0
 #define SPAWN_VW 0
-#define SPAWN_SKIN 7  // Skin RP padrão
+#define SPAWN_SKIN 26  // Skin masculina RP padrão
 
 // ================= MAIN =================
 main()
@@ -76,7 +76,7 @@ public OnPlayerConnect(playerid)
     return 1;
 }
 
-// ================= DIALOG RESPONSE =================
+// ================= DIALOG =================
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
     if(!response) return Kick(playerid);
@@ -92,7 +92,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         dini_IntSet(path, "Admin", 0);
         dini_IntSet(path, "Celular", 1);
 
-        // Spawn inicial fixo no aeroporto de LS
+        // Spawn inicial no aeroporto de LS
         SpawnX[playerid] = SPAWN_X;
         SpawnY[playerid] = SPAWN_Y;
         SpawnZ[playerid] = SPAWN_Z;
@@ -105,11 +105,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         PlayerAdmin[playerid] = 0;
 
         TogglePlayerControllable(playerid, true);
+        SendClientMessage(playerid, 0x00FF00FF,
+            "Bem-vindo(a) à Cidade RP Full! Explore, faça amigos e divirta-se!");
         SpawnPlayer(playerid);
-
-        // Mensagem de boas-vindas
-        SendClientMessage(playerid, 0x00FFFF00, "Bem-vindo à Nova Cidade RP! Prepare-se para viver sua história!");
-
         return 1;
     }
 
@@ -130,7 +128,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         TemCelular[playerid] = dini_Int(path, "Celular");
         PlayerAdmin[playerid] = dini_Int(path, "Admin");
 
-        // Spawn salvo do arquivo, mas se inválido, usa spawn fixo
+        // Carregar spawn salvo
         SpawnX[playerid] = dini_Float(path, "X");
         SpawnY[playerid] = dini_Float(path, "Y");
         SpawnZ[playerid] = dini_Float(path, "Z");
@@ -138,38 +136,37 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         SpawnVW[playerid] = dini_Int(path, "VW");
         SpawnSkin[playerid] = dini_Int(path, "Skin");
 
-        if(SpawnX[playerid] == 0.0 && SpawnY[playerid] == 0.0)
-        {
-            SpawnX[playerid] = SPAWN_X;
-            SpawnY[playerid] = SPAWN_Y;
-            SpawnZ[playerid] = SPAWN_Z;
-            SpawnInt[playerid] = SPAWN_INT;
-            SpawnVW[playerid] = SPAWN_VW;
-            SpawnSkin[playerid] = SPAWN_SKIN;
-        }
-
         ResetPlayerMoney(playerid);
         GivePlayerMoney(playerid, dini_Int(path, "Dinheiro"));
 
         TogglePlayerControllable(playerid, true);
+        SendClientMessage(playerid, 0x00FF00FF,
+            "Bem-vindo(a) de volta à Cidade RP Full!");
         SpawnPlayer(playerid);
-
-        // Mensagem de boas-vindas
-        SendClientMessage(playerid, 0x00FFFF00, "Bem-vindo de volta à Nova Cidade RP! Boa diversão!");
-
         return 1;
     }
-
     return 0;
 }
 
-// ================= SPAWN FIX =================
+// ================= SPAWN =================
 public OnPlayerSpawn(playerid)
 {
+    // Caso spawn não esteja definido, envia para aeroporto LS
+    if(SpawnX[playerid] == 0.0 && SpawnY[playerid] == 0.0)
+    {
+        SpawnX[playerid] = SPAWN_X;
+        SpawnY[playerid] = SPAWN_Y;
+        SpawnZ[playerid] = SPAWN_Z;
+        SpawnInt[playerid] = SPAWN_INT;
+        SpawnVW[playerid] = SPAWN_VW;
+        SpawnSkin[playerid] = SPAWN_SKIN;
+    }
+
     SetPlayerPos(playerid, SpawnX[playerid], SpawnY[playerid], SpawnZ[playerid]);
     SetPlayerInterior(playerid, SpawnInt[playerid]);
     SetPlayerVirtualWorld(playerid, SpawnVW[playerid]);
     SetPlayerSkin(playerid, SpawnSkin[playerid]);
+
     return 1;
 }
 
@@ -196,17 +193,11 @@ CMD:dis(playerid, params[])
     return 1;
 }
 
-// ================= /AJUDA =================
+// ================= AJUDA =================
 CMD:ajuda(playerid, params[])
 {
     SendClientMessage(playerid, -1,
-        "Comandos:\n"
-        "/dis - Enviar mensagem global (com celular)\n"
-        "/ajuda - Mostrar comandos\n"
-        "/admins - Ver admins online\n"
-        "/setadmin [id] [nivel] - Definir admin\n"
-        "/setmoney [id] [valor] - Dar dinheiro\n"
-        "/ir [id] - Teleport para jogador");
+        "Comandos: /dis /ajuda /admins /setadmin /setmoney /ir");
     return 1;
 }
 
@@ -232,6 +223,7 @@ CMD:admins(playerid, params[])
     return 1;
 }
 
+// ================= SETADMIN =================
 CMD:setadmin(playerid, params[])
 {
     if(!IsAdmin(playerid, 5)) return 1;
@@ -253,6 +245,7 @@ CMD:setadmin(playerid, params[])
     return 1;
 }
 
+// ================= SETMONEY =================
 CMD:setmoney(playerid, params[])
 {
     if(!IsAdmin(playerid, 4)) return 1;
@@ -266,6 +259,7 @@ CMD:setmoney(playerid, params[])
     return 1;
 }
 
+// ================= IR =================
 CMD:ir(playerid, params[])
 {
     if(!IsAdmin(playerid, 3)) return 1;
@@ -288,22 +282,21 @@ public OnPlayerDisconnect(playerid, reason)
 {
     if(!Logado[playerid]) return 1;
 
-    new path[64]; 
+    new path[64], Float:x, Float:y, Float:z;
     ContaPath(playerid, path, sizeof path);
 
-    new Float:x, Float:y, Float:z;
     GetPlayerPos(playerid, x, y, z);
 
     dini_IntSet(path, "Dinheiro", GetPlayerMoney(playerid));
     dini_IntSet(path, "Celular", TemCelular[playerid]);
     dini_IntSet(path, "Admin", PlayerAdmin[playerid]);
-    dini_FloatSet(path, "X", SpawnX[playerid]);
-    dini_FloatSet(path, "Y", SpawnY[playerid]);
-    dini_FloatSet(path, "Z", SpawnZ[playerid]);
-    dini_IntSet(path, "Interior", SpawnInt[playerid]);
-    dini_IntSet(path, "VW", SpawnVW[playerid]);
-    dini_IntSet(path, "Skin", SpawnSkin[playerid]);
 
+    dini_FloatSet(path, "X", x);
+    dini_FloatSet(path, "Y", y);
+    dini_FloatSet(path, "Z", z);
+    dini_IntSet(path, "Interior", GetPlayerInterior(playerid));
+    dini_IntSet(path, "VW", GetPlayerVirtualWorld(playerid));
+    dini_IntSet(path, "Skin", GetPlayerSkin(playerid));
     return 1;
 }
 
