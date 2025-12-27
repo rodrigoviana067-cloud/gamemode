@@ -53,3 +53,4 @@ CMD:a(playerid)
     SendClientMessage(playerid, -1, "Comando admin funcionando.");
     return 1;
 }
+
