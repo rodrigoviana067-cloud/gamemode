@@ -48,8 +48,7 @@ stock IsAdmin(playerid, level)
 {
     if(PlayerAdmin[playerid] < level)
     {
-        SendClientMessage(playerid, 0xFF0000FF,
-            "Você não tem permissão para este comando.");
+        SendClientMessage(playerid, 0xFF0000FF, "Você não tem permissão para este comando.");
         return 0;
     }
     return 1;
@@ -70,15 +69,10 @@ public OnPlayerConnect(playerid)
     ContaPath(playerid, path, sizeof path);
 
     if(dini_Exists(path))
-    {
-        ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
-            "Login", "Digite sua senha:", "Entrar", "Sair");
-    }
+        ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "Login", "Digite sua senha:", "Entrar", "Sair");
     else
-    {
-        ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD,
-            "Registro", "Crie sua senha:", "Registrar", "Sair");
-    }
+        ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD, "Registro", "Crie sua senha:", "Registrar", "Sair");
+
     return 1;
 }
 
@@ -98,8 +92,13 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         dini_IntSet(path, "Admin", 0);
         dini_IntSet(path, "Celular", 1);
         dini_IntSet(path, "Emprego", 0);
+        dini_IntSet(path, "Interior", SPAWN_INT);
+        dini_IntSet(path, "VW", SPAWN_VW);
+        dini_IntSet(path, "Skin", SPAWN_SKIN);
+        dini_FloatSet(path, "X", SPAWN_X);
+        dini_FloatSet(path, "Y", SPAWN_Y);
+        dini_FloatSet(path, "Z", SPAWN_Z);
 
-        // Spawn inicial no aeroporto de LS
         SpawnX[playerid] = SPAWN_X;
         SpawnY[playerid] = SPAWN_Y;
         SpawnZ[playerid] = SPAWN_Z;
@@ -124,8 +123,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         if(strcmp(inputtext, senha, false))
         {
             SendClientMessage(playerid, 0xFF0000FF, "Senha incorreta!");
-            ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
-                "Login", "Digite sua senha:", "Entrar", "Sair");
+            ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "Login", "Digite sua senha:", "Entrar", "Sair");
             return 1;
         }
 
@@ -142,6 +140,13 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         SpawnVW[playerid] = dini_Int(path, "VW");
         SpawnSkin[playerid] = dini_Int(path, "Skin");
 
+        // Corrigir skin inválida
+        if(SpawnSkin[playerid] < 0 || SpawnSkin[playerid] > 311)
+        {
+            SpawnSkin[playerid] = SPAWN_SKIN;
+            dini_IntSet(path, "Skin", SPAWN_SKIN);
+        }
+
         ResetPlayerMoney(playerid);
         GivePlayerMoney(playerid, dini_Int(path, "Dinheiro"));
 
@@ -155,9 +160,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     {
         switch(listitem)
         {
-            case 0: SendClientMessage(playerid, 0xFFFF00FF, "Lista de empregos: /menu"); // expandir
-            case 1: SendClientMessage(playerid, 0xFFFF00FF, "GPS de cidades e locais importantes."); 
-            case 2: SendClientMessage(playerid, 0xFFFF00FF, "Propriedades e casas disponíveis.");
+            case 0: SendClientMessage(playerid, 0xFFFF00FF, "Lista de empregos: /menu"); break;
+            case 1: SendClientMessage(playerid, 0xFFFF00FF, "GPS de cidades e locais importantes."); break;
+            case 2: SendClientMessage(playerid, 0xFFFF00FF, "Propriedades e casas disponíveis."); break;
             default: return 1;
         }
     }
@@ -168,6 +173,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 // ================= SPAWN =================
 public OnPlayerSpawn(playerid)
 {
+    // Garantir spawn válido
     if(SpawnX[playerid] == 0.0 && SpawnY[playerid] == 0.0)
     {
         SpawnX[playerid] = SPAWN_X;
@@ -192,12 +198,9 @@ public OnPlayerSpawn(playerid)
 // ================= COMANDOS =================
 CMD:dis(playerid, params[])
 {
-    if(!Logado[playerid])
-        return SendClientMessage(playerid, 0xFF0000FF, "Você precisa estar logado.");
-    if(!TemCelular[playerid])
-        return SendClientMessage(playerid, 0xFF0000FF, "Você não possui celular.");
-    if(isnull(params))
-        return SendClientMessage(playerid, 0xFFFF00FF, "Uso correto: /dis [mensagem]");
+    if(!Logado[playerid]) return SendClientMessage(playerid, 0xFF0000FF, "Você precisa estar logado.");
+    if(!TemCelular[playerid]) return SendClientMessage(playerid, 0xFF0000FF, "Você não possui celular.");
+    if(isnull(params)) return SendClientMessage(playerid, 0xFFFF00FF, "Uso correto: /dis [mensagem]");
 
     new nome[MAX_PLAYER_NAME], msg[144];
     GetPlayerName(playerid, nome, sizeof nome);
@@ -213,7 +216,7 @@ CMD:dis(playerid, params[])
 CMD:ajuda(playerid, params[])
 {
     SendClientMessage(playerid, -1,
-        "Comandos disponíveis: /dis /ajuda /admins /setadmin /setmoney /ir /dinheiro /menu");
+        "Comandos disponíveis: /dis /ajuda /admins /setadmin /setmoney /ir /dinheiro /menu /emprego /gps /casas");
     return 1;
 }
 
@@ -241,7 +244,6 @@ CMD:admins(playerid, params[])
     }
 
     if(!c) return SendClientMessage(playerid, -1, "Nenhum admin online.");
-
     ShowPlayerDialog(playerid, 2000, DIALOG_STYLE_MSGBOX, "Admins", texto, "OK", "");
     return 1;
 }
@@ -253,11 +255,9 @@ CMD:setadmin(playerid, params[])
     new id, nivel;
     if(sscanf(params, "dd", id, nivel))
         return SendClientMessage(playerid, -1, "Uso correto: /setadmin [id] [nivel]");
-    if(!IsPlayerConnected(id))
-        return SendClientMessage(playerid, -1, "Jogador inválido.");
+    if(!IsPlayerConnected(id)) return SendClientMessage(playerid, -1, "Jogador inválido.");
 
     PlayerAdmin[id] = nivel;
-
     new path[64];
     ContaPath(id, path, sizeof path);
     dini_IntSet(path, "Admin", nivel);
@@ -286,8 +286,7 @@ CMD:ir(playerid, params[])
     new id;
     if(sscanf(params, "d", id))
         return SendClientMessage(playerid, -1, "Uso correto: /ir [id]");
-    if(!IsPlayerConnected(id))
-        return SendClientMessage(playerid, -1, "Jogador inválido.");
+    if(!IsPlayerConnected(id)) return SendClientMessage(playerid, -1, "Jogador inválido.");
 
     new Float:x, Float:y, Float:z;
     GetPlayerPos(id, x, y, z);
@@ -317,13 +316,12 @@ public OnPlayerDisconnect(playerid, reason)
     dini_IntSet(path, "Celular", TemCelular[playerid]);
     dini_IntSet(path, "Admin", PlayerAdmin[playerid]);
     dini_IntSet(path, "Emprego", PlayerEmprego[playerid]);
-
-    dini_FloatSet(path, "X", x);
-    dini_FloatSet(path, "Y", y);
-    dini_FloatSet(path, "Z", z);
     dini_IntSet(path, "Interior", GetPlayerInterior(playerid));
     dini_IntSet(path, "VW", GetPlayerVirtualWorld(playerid));
     dini_IntSet(path, "Skin", GetPlayerSkin(playerid));
+    dini_FloatSet(path, "X", x);
+    dini_FloatSet(path, "Y", y);
+    dini_FloatSet(path, "Z", z);
 
     return 1;
 }
@@ -338,7 +336,6 @@ public OnGameModeInit()
 // ================= ANTI UNKNOWN COMMAND =================
 public OnPlayerCommandText(playerid, cmdtext[])
 {
-    SendClientMessage(playerid, 0xFF0000FF,
-        "ERRO: Comando inexistente. Use /ajuda.");
+    SendClientMessage(playerid, 0xFF0000FF, "ERRO: Comando inexistente. Use /ajuda.");
     return 1;
 }
