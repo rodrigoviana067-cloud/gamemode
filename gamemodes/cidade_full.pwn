@@ -7,6 +7,7 @@
 #define DIALOG_LOGIN    1
 #define DIALOG_REGISTER 2
 #define DIALOG_MENU     100
+#define DIALOG_GPS      2001
 
 // ================= VARIÁVEIS =================
 new bool:Logado[MAX_PLAYERS];
@@ -21,6 +22,9 @@ new SpawnInt[MAX_PLAYERS];
 new SpawnVW[MAX_PLAYERS];
 new SpawnSkin[MAX_PLAYERS];
 
+// ================= GPS =================
+new PlayerGPS[MAX_PLAYERS]; // Blip atual do jogador
+
 // ================= SPAWN PADRÃO =================
 #define SPAWN_X 1702.5
 #define SPAWN_Y 328.5
@@ -33,6 +37,7 @@ new SpawnSkin[MAX_PLAYERS];
 main()
 {
     print("Gamemode Cidade RP Full carregado.");
+    return 1;
 }
 
 // ================= PATH =================
@@ -61,6 +66,7 @@ public OnPlayerConnect(playerid)
     TemCelular[playerid] = 0;
     PlayerAdmin[playerid] = 0;
     PlayerEmprego[playerid] = 0;
+    PlayerGPS[playerid] = INVALID_PLAYER_ID;
 
     TogglePlayerControllable(playerid, false);
     ResetPlayerMoney(playerid);
@@ -90,7 +96,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     ContaPath(playerid, path, sizeof(path));
 
     // Registro
-    if (dialogid == DIALOG_REGISTER)
+    if(dialogid == DIALOG_REGISTER)
     {
         dini_Create(path);
         dini_Set(path, "Senha", inputtext);
@@ -117,12 +123,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     }
 
     // Login
-    if (dialogid == DIALOG_LOGIN)
+    if(dialogid == DIALOG_LOGIN)
     {
         new senha[32];
         dini_Get(path, "Senha", senha);
 
-        if (strcmp(inputtext, senha, false))
+        if(strcmp(inputtext, senha, false))
         {
             SendClientMessage(playerid, 0xFF0000FF, "Senha incorreta!");
             ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
@@ -152,24 +158,43 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     }
 
     // Menu principal
-    if (dialogid == DIALOG_MENU)
+    if(dialogid == DIALOG_MENU)
     {
-        if (listitem == 0)
+        if(listitem == 0)
         {
             SendClientMessage(playerid, 0xFFFF00FF, "Lista de empregos disponíveis:");
             SendClientMessage(playerid, 0xFFFF00FF, "/policial /medico /trabalhador /taxista");
         }
-        else if (listitem == 1)
+        else if(listitem == 1)
         {
-            SendClientMessage(playerid, 0xFFFF00FF, "GPS de locais importantes:");
-            SendClientMessage(playerid, 0xFFFF00FF, "Aeroporto LS: 1702.5,328.5,10.0");
-            SendClientMessage(playerid, 0xFFFF00FF, "Downtown LS: 500.0,-1000.0,20.0");
+            // GPS Menu
+            ShowPlayerDialog(playerid, DIALOG_GPS, DIALOG_STYLE_LIST,
+                "GPS - Locais", "Aeroporto LS\nDowntown LS\nHospital\nPrefeitura", "Ir", "Fechar");
         }
-        else if (listitem == 2)
+        else if(listitem == 2)
         {
             SendClientMessage(playerid, 0xFFFF00FF, "Propriedades e casas disponíveis:");
             SendClientMessage(playerid, 0xFFFF00FF, "Compre casas com /comprarcasa");
         }
+        return 1;
+    }
+
+    // GPS Selection
+    if(dialogid == DIALOG_GPS)
+    {
+        new Float:x, y, z;
+        if(listitem == 0) { x = 1702.5; y = 328.5; z = 10.0; }
+        else if(listitem == 1) { x = 500.0; y = -1000.0; z = 20.0; }
+        else if(listitem == 2) { x = 2000.0; y = 1000.0; z = 15.0; }
+        else if(listitem == 3) { x = 2500.0; y = 1500.0; z = 15.0; }
+        else return 1;
+
+        // Marca o GPS no mapa
+        if(PlayerGPS[playerid] != INVALID_PLAYER_ID)
+            RemovePlayerBlip(playerid, PlayerGPS[playerid]);
+
+        PlayerGPS[playerid] = CreateDynamicBlip(x, y, z, 0, 0, playerid);
+        SendClientMessage(playerid, 0x00FF00FF, "GPS atualizado! Confira o ponto no mapa.");
         return 1;
     }
 
@@ -179,7 +204,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 // ================= SPAWN =================
 public OnPlayerSpawn(playerid)
 {
-    if (SpawnX[playerid] == 0.0 && SpawnY[playerid] == 0.0)
+    if(SpawnX[playerid] == 0.0 && SpawnY[playerid] == 0.0)
     {
         SpawnX[playerid] = SPAWN_X;
         SpawnY[playerid] = SPAWN_Y;
@@ -194,24 +219,23 @@ public OnPlayerSpawn(playerid)
     SetPlayerVirtualWorld(playerid, SpawnVW[playerid]);
     SetPlayerSkin(playerid, SpawnSkin[playerid]);
 
-    SendClientMessage(playerid, 0x00FF00FF,
-        "Bem-vindo à Cidade RP Full! Explore, divirta-se e respeite as regras.");
+    SendClientMessage(playerid, 0x00FF00FF, "Bem-vindo à Cidade RP Full!");
     return 1;
 }
 
 // ================= COMANDOS =================
 CMD:dis(playerid, params[])
 {
-    if (!Logado[playerid]) return SendClientMessage(playerid, 0xFF0000FF, "Você precisa estar logado.");
-    if (!TemCelular[playerid]) return SendClientMessage(playerid, 0xFF0000FF, "Você não possui celular.");
-    if (isnull(params)) return SendClientMessage(playerid, 0xFFFF00FF, "Uso correto: /dis [mensagem]");
+    if(!Logado[playerid]) return SendClientMessage(playerid, 0xFF0000FF, "Você precisa estar logado.");
+    if(!TemCelular[playerid]) return SendClientMessage(playerid, 0xFF0000FF, "Você não possui celular.");
+    if(isnull(params)) return SendClientMessage(playerid, 0xFFFF00FF, "Uso correto: /dis [mensagem]");
 
     new nome[MAX_PLAYER_NAME], msg[144];
     GetPlayerName(playerid, nome, sizeof(nome));
     format(msg, sizeof(msg), "[DISPATCH] %s: %s", nome, params);
 
-    for (new i = 0; i < MAX_PLAYERS; i++)
-        if (IsPlayerConnected(i) && TemCelular[i])
+    for(new i=0; i<MAX_PLAYERS; i++)
+        if(IsPlayerConnected(i) && TemCelular[i])
             SendClientMessage(i, 0x00FF00FF, msg);
 
     return 1;
@@ -227,21 +251,18 @@ CMD:menu(playerid, params[])
 
 CMD:ajuda(playerid, params[])
 {
-    SendClientMessage(playerid, -1,
-        "Comandos: /dis /ajuda /admins /setadmin /setmoney /ir /dinheiro /menu /comprarcasa /policial /medico /trabalhador /taxista");
+    SendClientMessage(playerid, -1, "Comandos: /dis /ajuda /admins /setadmin /setmoney /ir /dinheiro /menu /comprarcasa /policial /medico /trabalhador /taxista");
     return 1;
 }
 
 CMD:admins(playerid, params[])
 {
-    new texto[512];
-    new nome[MAX_PLAYER_NAME];
-    new c = 0;
+    new texto[512], nome[MAX_PLAYER_NAME], c=0;
     format(texto, sizeof(texto), "Admins online:\n");
 
-    for (new i = 0; i < MAX_PLAYERS; i++)
+    for(new i=0; i<MAX_PLAYERS; i++)
     {
-        if (IsPlayerConnected(i) && PlayerAdmin[i] > 0)
+        if(IsPlayerConnected(i) && PlayerAdmin[i] > 0)
         {
             GetPlayerName(i, nome, sizeof(nome));
             format(texto, sizeof(texto), "%s%s (Nivel %d)\n", texto, nome, PlayerAdmin[i]);
@@ -249,7 +270,7 @@ CMD:admins(playerid, params[])
         }
     }
 
-    if (!c) return SendClientMessage(playerid, -1, "Nenhum admin online.");
+    if(!c) return SendClientMessage(playerid, -1, "Nenhum admin online.");
 
     ShowPlayerDialog(playerid, 2000, DIALOG_STYLE_MSGBOX, "Admins", texto, "OK", "");
     return 1;
@@ -257,11 +278,11 @@ CMD:admins(playerid, params[])
 
 CMD:setadmin(playerid, params[])
 {
-    if (!IsAdmin(playerid, 5)) return 1;
+    if(!IsAdmin(playerid, 5)) return 1;
 
     new id, nivel;
-    if (sscanf(params, "dd", id, nivel)) return SendClientMessage(playerid, -1, "Uso correto: /setadmin [id] [nivel]");
-    if (!IsPlayerConnected(id)) return SendClientMessage(playerid, -1, "Jogador inválido.");
+    if(sscanf(params, "dd", id, nivel)) return SendClientMessage(playerid, -1, "Uso correto: /setadmin [id] [nivel]");
+    if(!IsPlayerConnected(id)) return SendClientMessage(playerid, -1, "Jogador inválido.");
 
     PlayerAdmin[id] = nivel;
 
@@ -275,10 +296,10 @@ CMD:setadmin(playerid, params[])
 
 CMD:setmoney(playerid, params[])
 {
-    if (!IsAdmin(playerid, 4)) return 1;
+    if(!IsAdmin(playerid, 4)) return 1;
 
     new id, valor;
-    if (sscanf(params, "dd", id, valor)) return SendClientMessage(playerid, -1, "Uso correto: /setmoney [id] [valor]");
+    if(sscanf(params, "dd", id, valor)) return SendClientMessage(playerid, -1, "Uso correto: /setmoney [id] [valor]");
 
     ResetPlayerMoney(id);
     GivePlayerMoney(id, valor);
@@ -287,13 +308,13 @@ CMD:setmoney(playerid, params[])
 
 CMD:ir(playerid, params[])
 {
-    if (!IsAdmin(playerid, 3)) return 1;
+    if(!IsAdmin(playerid, 3)) return 1;
 
     new id;
-    if (sscanf(params, "d", id)) return SendClientMessage(playerid, -1, "Uso correto: /ir [id]");
-    if (!IsPlayerConnected(id)) return SendClientMessage(playerid, -1, "Jogador inválido.");
+    if(sscanf(params, "d", id)) return SendClientMessage(playerid, -1, "Uso correto: /ir [id]");
+    if(!IsPlayerConnected(id)) return SendClientMessage(playerid, -1, "Jogador inválido.");
 
-    new Float:x, Float:y, Float:z;
+    new Float:x, y, z;
     GetPlayerPos(id, x, y, z);
     SetPlayerPos(playerid, x+1.0, y, z);
     return 1;
@@ -310,7 +331,7 @@ CMD:dinheiro(playerid)
 // ================= SAVE =================
 public OnPlayerDisconnect(playerid, reason)
 {
-    if (!Logado[playerid]) return 1;
+    if(!Logado[playerid]) return 1;
 
     new path[64];
     new Float:x, y, z;
@@ -345,4 +366,10 @@ public OnPlayerCommandText(playerid, cmdtext[])
 {
     SendClientMessage(playerid, 0xFF0000FF, "ERRO: Comando inexistente. Use /ajuda.");
     return 1;
+}
+
+// ================= FUNÇÃO AUXILIAR =================
+stock CreateDynamicBlip(Float:x, Float:y, Float:z, type, color, playerid)
+{
+    return CreatePlayer3DTextLabel("GPS", x, y, z+1.0, 0xFF0000FF, playerid, 999.0, 0); // Blip simulado com 3D text
 }
