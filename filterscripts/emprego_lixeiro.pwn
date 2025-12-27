@@ -7,7 +7,6 @@
 #define LIXO_VEHICLE 408 // Trashmaster
 
 new LixoTruck;
-
 new Float:LixoPontos[MAX_LIXO_PONTOS][3] =
 {
     {2190.0, -1970.0, 13.5},
@@ -17,7 +16,6 @@ new Float:LixoPontos[MAX_LIXO_PONTOS][3] =
 
 new LixoAtual[MAX_PLAYERS];
 new Trabalhando[MAX_PLAYERS];
-
 new PlayerJob[MAX_PLAYERS];
 
 // =========================
@@ -26,6 +24,15 @@ new PlayerJob[MAX_PLAYERS];
 public OnFilterScriptInit()
 {
     print("Emprego Lixeiro carregado.");
+
+    LixoTruck = CreateVehicle(
+        LIXO_VEHICLE,
+        2195.0, -1975.0, 13.5,
+        90.0,
+        1, 1,
+        -1
+    );
+
     return 1;
 }
 
@@ -34,9 +41,19 @@ public OnPlayerConnect(playerid)
     PlayerJob[playerid] = EMPREGO_NENHUM;
     return 1;
 }
+
+// =========================
+// CHECKPOINT
+// =========================
 public OnPlayerEnterCheckpoint(playerid)
 {
     if (!Trabalhando[playerid]) return 1;
+
+    if (!IsPlayerInVehicle(playerid, LixoTruck))
+    {
+        SendClientMessage(playerid, -1, "Volte para o caminhão de lixo.");
+        return 1;
+    }
 
     GivePlayerMoney(playerid, 300);
 
@@ -55,37 +72,12 @@ public OnPlayerEnterCheckpoint(playerid)
         LixoPontos[LixoAtual[playerid]][0],
         LixoPontos[LixoAtual[playerid]][1],
         LixoPontos[LixoAtual[playerid]][2],
-        3.0
+        4.0
     );
 
     SendClientMessage(playerid, -1, "Lixo coletado! Próximo ponto marcado.");
     return 1;
 }
-
-public OnFilterScriptInit()
-{
-    print("Emprego Lixeiro carregado.");
-
-    LixoTruck = CreateVehicle(
-        LIXO_VEHICLE,
-        2195.0, -1975.0, 13.5,
-        90.0,
-        1, 1,
-        -1
-    );
-
-    return 1
-}
-
-public OnPlayerEnterCheckpoint(playerid)
-{
-    if (!Trabalhando[playerid]) return 1;
-
-    if (!IsPlayerInVehicle(playerid, LixoTruck))
-    {
-        SendClientMessage(playerid, -1, "Volte para o caminhão de lixo.");
-        return 1;
-    }
 
 // =========================
 // PEGAR EMPREGO
@@ -101,6 +93,9 @@ CMD:pegarlixo(playerid, params[])
     return 1;
 }
 
+// =========================
+// INICIAR TRABALHO
+// =========================
 CMD:iniciarlixo(playerid, params[])
 {
     if (PlayerJob[playerid] != EMPREGO_LIXEIRO)
@@ -125,7 +120,7 @@ CMD:iniciarlixo(playerid, params[])
 }
 
 // =========================
-// TRABALHAR
+// TRABALHAR (comando extra)
 // =========================
 CMD:trabalhar(playerid, params[])
 {
@@ -147,5 +142,19 @@ CMD:sairdoemprego(playerid, params[])
     DisablePlayerCheckpoint(playerid);
 
     SendClientMessage(playerid, -1, "Você saiu do emprego.");
+    return 1;
+}
+
+// =========================
+// CANCELAR SE SAIR DO CAMINHÃO
+// =========================
+public OnPlayerExitVehicle(playerid, vehicleid)
+{
+    if (vehicleid == LixoTruck && Trabalhando[playerid])
+    {
+        Trabalhando[playerid] = 0;
+        DisablePlayerCheckpoint(playerid);
+        SendClientMessage(playerid, -1, "Você saiu do caminhão. Trabalho cancelado.");
+    }
     return 1;
 }
