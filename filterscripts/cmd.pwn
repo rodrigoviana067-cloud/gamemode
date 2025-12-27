@@ -18,14 +18,14 @@ enum hInfo
     Float:hIntY,
     Float:hIntZ,
     hInterior,
-    hOwner,
+    hOwner,          // -1 = sem dono
     hLocked,
     Text3D:hLabel,
     Pickup:hPickup
 };
 
 new House[MAX_HOUSES][hInfo];
-new PlayerHouse[MAX_PLAYERS] = {-1, ...};
+new PlayerHouse[MAX_PLAYERS];
 
 // ================= PATH ===================
 stock HouseFile(id, string[], size)
@@ -69,7 +69,6 @@ LoadHouse(id)
         House[id][hX], House[id][hY], House[id][hZ] + 1.0,
         10.0
     );
-
     return 1;
 }
 
@@ -92,22 +91,38 @@ SaveHouse(id)
     dini_IntSet(file, "Interior", House[id][hInterior]);
     dini_IntSet(file, "Owner", House[id][hOwner]);
     dini_IntSet(file, "Locked", House[id][hLocked]);
+    return 1;
 }
 
-// ================= CREATE HOUSE (ADMIN) ===
+// ================= FILTERSCRIPT INIT ======
+public OnFilterScriptInit()
+{
+    print("[HOUSES] Filterscript carregado.");
+
+    for(new i = 0; i < MAX_HOUSES; i++)
+    {
+        PlayerHouse[i] = -1;
+        LoadHouse(i);
+    }
+    return 1;
+}
+
+// ================= CREATE HOUSE ===========
 CMD:sethouse(playerid, params[])
 {
     new id;
-    if(sscanf(params, "d", id)) return SendClientMessage(playerid, -1, "/sethouse ID");
+    if(sscanf(params, "d", id))
+        return SendClientMessage(playerid, -1, "/sethouse ID");
 
-    if(id < 0 || id >= MAX_HOUSES) return SendClientMessage(playerid, -1, "ID inválido");
+    if(id < 0 || id >= MAX_HOUSES)
+        return SendClientMessage(playerid, -1, "ID inválido.");
 
     GetPlayerPos(playerid, House[id][hX], House[id][hY], House[id][hZ]);
     GetPlayerPos(playerid, House[id][hIntX], House[id][hIntY], House[id][hIntZ]);
 
     House[id][hInterior] = GetPlayerInterior(playerid);
     House[id][hOwner] = -1;
-    House[id][hLocked] = 1;
+    House[id][hLocked] = 0;
 
     SaveHouse(id);
     LoadHouse(id);
@@ -119,7 +134,7 @@ CMD:sethouse(playerid, params[])
 // ================= BUY HOUSE ==============
 CMD:buyhouse(playerid, params[])
 {
-    for(new i; i < MAX_HOUSES; i++)
+    for(new i = 0; i < MAX_HOUSES; i++)
     {
         if(IsPlayerInRangeOfPoint(playerid, 2.0,
             House[i][hX], House[i][hY], House[i][hZ]))
@@ -131,13 +146,17 @@ CMD:buyhouse(playerid, params[])
                 return SendClientMessage(playerid, -1, "Dinheiro insuficiente.");
 
             GivePlayerMoney(playerid, -HOUSE_PRICE);
+
             House[i][hOwner] = playerid;
             PlayerHouse[playerid] = i;
 
+            UpdateDynamic3DTextLabelText(
+                House[i][hLabel],
+                0xFF0000FF,
+                "Casa privada"
+            );
+
             SaveHouse(i);
-
-            UpdateDynamic3DTextLabelText
-
             SendClientMessage(playerid, -1, "Você comprou a casa!");
             return 1;
         }
@@ -149,7 +168,8 @@ CMD:buyhouse(playerid, params[])
 CMD:enterhouse(playerid, params[])
 {
     new id = PlayerHouse[playerid];
-    if(id == -1) return SendClientMessage(playerid, -1, "Você não tem casa.");
+    if(id == -1)
+        return SendClientMessage(playerid, -1, "Você não tem casa.");
 
     if(House[id][hLocked])
         return SendClientMessage(playerid, -1, "Casa trancada.");
@@ -167,14 +187,19 @@ CMD:enterhouse(playerid, params[])
 CMD:sellhouse(playerid, params[])
 {
     new id = PlayerHouse[playerid];
-    if(id == -1) return SendClientMessage(playerid, -1, "Você não tem casa.");
+    if(id == -1)
+        return SendClientMessage(playerid, -1, "Você não tem casa.");
 
     House[id][hOwner] = -1;
     PlayerHouse[playerid] = -1;
 
     GivePlayerMoney(playerid, HOUSE_PRICE / 2);
 
-    UpdateDynamic3DTextLabelText
+    UpdateDynamic3DTextLabelText(
+        House[id][hLabel],
+        0x00FF00FF,
+        "Casa à venda"
+    );
 
     SaveHouse(id);
     SendClientMessage(playerid, -1, "Casa vendida.");
