@@ -21,12 +21,12 @@
 // ================= VARIÁVEIS =================
 new bool:Logado[MAX_PLAYERS];
 new PlayerEmprego[MAX_PLAYERS];
-new bool:EmServico[MAX_PLAYERS];
 
 // ================= SPAWN =================
 #define SPAWN_X 1702.5
 #define SPAWN_Y 328.5
 #define SPAWN_Z 10.0
+#define SPAWN_SKIN 26
 
 // ================= PATH =================
 stock ContaPath(playerid, path[], size)
@@ -36,24 +36,12 @@ stock ContaPath(playerid, path[], size)
     format(path, size, "Contas/%s.ini", nome);
 }
 
-// ================= CIDADE =================
-stock GetPlayerCidade(playerid)
-{
-    new Float:x, Float:y, Float:z;
-    GetPlayerPos(playerid, x, y, z);
-
-    if(x > 44.0 && x < 2997.0 && y > -2892.0 && y < -768.0) return 1; // LS
-    if(x < -44.0 && y < 2997.0) return 2; // SF
-    if(x > 44.0 && y > 768.0) return 3; // LV
-
-    return 0;
-}
-
 // ================= CONNECT =================
 public OnPlayerConnect(playerid)
 {
     Logado[playerid] = false;
     PlayerEmprego[playerid] = EMPREGO_NENHUM;
+
     TogglePlayerControllable(playerid, false);
 
     new path[64];
@@ -66,6 +54,27 @@ public OnPlayerConnect(playerid)
         ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD,
         "Registro", "Crie sua senha:", "Registrar", "Sair");
 
+    return 1;
+}
+
+public OnPlayerDisconnect(playerid, reason)
+{
+    new path[64];
+    ContaPath(playerid, path, sizeof(path));
+
+    if(Logado[playerid])
+        dini_IntSet(path, "Emprego", PlayerEmprego[playerid]);
+
+    return 1;
+}
+
+// ================= SPAWN =================
+public OnPlayerSpawn(playerid)
+{
+    SetPlayerSkin(playerid, SPAWN_SKIN);
+    SetPlayerPos(playerid, SPAWN_X, SPAWN_Y, SPAWN_Z);
+    SetPlayerInterior(playerid, 0);
+    SetPlayerVirtualWorld(playerid, 0);
     return 1;
 }
 
@@ -138,14 +147,21 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(dialogid == DIALOG_EMPREGOS)
     {
         PlayerEmprego[playerid] = listitem + 1;
-        SendClientMessage(playerid, -1, "Emprego assumido!");
+        SendClientMessage(playerid, -1, "Emprego assumido com sucesso!");
         return 1;
     }
 
     // GPS
     if(dialogid == DIALOG_GPS)
     {
-        SetPlayerCheckpoint(playerid, 1555.0, -1675.0, 16.2, 5.0);
+        DisablePlayerCheckpoint(playerid);
+
+        switch(listitem)
+        {
+            case 0: SetPlayerCheckpoint(playerid, 1555.0, -1675.0, 16.2, 5.0); // Prefeitura LS
+            case 1: SetPlayerCheckpoint(playerid, -1987.0, 138.0, 27.6, 5.0); // Prefeitura SF
+            case 2: SetPlayerCheckpoint(playerid, 1377.0, 2329.0, 10.8, 5.0); // Prefeitura LV
+        }
         return 1;
     }
 
@@ -172,7 +188,7 @@ CMD:prefeitura(playerid)
 CMD:gps(playerid)
 {
     ShowPlayerDialog(playerid, DIALOG_GPS, DIALOG_STYLE_LIST,
-    "GPS", "Prefeitura", "Marcar", "Cancelar");
+    "GPS", "Prefeitura LS\nPrefeitura SF\nPrefeitura LV", "Marcar", "Cancelar");
     return 1;
 }
 
@@ -180,9 +196,9 @@ CMD:gps(playerid)
 forward PagamentoSalario();
 public PagamentoSalario()
 {
-    for(new i; i < MAX_PLAYERS; i++)
+    for(new i = 0; i < MAX_PLAYERS; i++)
     {
-        if(Logado[i] && PlayerEmprego[i] != EMPREGO_NENHUM)
+        if(IsPlayerConnected(i) && Logado[i] && PlayerEmprego[i] != EMPREGO_NENHUM)
             GivePlayerMoney(i, 1000);
     }
     return 1;
