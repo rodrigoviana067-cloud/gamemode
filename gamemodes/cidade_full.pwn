@@ -7,21 +7,16 @@
 #define DIALOG_LOGIN    1
 #define DIALOG_REGISTER 2
 #define DIALOG_MENU     100
+#define DIALOG_GPS      200
 
 // ================= VARIÁVEIS =================
 new bool:Logado[MAX_PLAYERS];
 new TemCelular[MAX_PLAYERS];
 new PlayerAdmin[MAX_PLAYERS];
 new PlayerEmprego[MAX_PLAYERS];
+new bool:GPSAtivo[MAX_PLAYERS];
 
-new Float:SpawnX[MAX_PLAYERS];
-new Float:SpawnY[MAX_PLAYERS];
-new Float:SpawnZ[MAX_PLAYERS];
-new SpawnInt[MAX_PLAYERS];
-new SpawnVW[MAX_PLAYERS];
-new SpawnSkin[MAX_PLAYERS];
-
-// ================= SPAWN PADRÃO (LS) =================
+// ================= SPAWN PADRÃO =================
 #define SPAWN_X 1702.5
 #define SPAWN_Y 328.5
 #define SPAWN_Z 10.0
@@ -32,7 +27,7 @@ new SpawnSkin[MAX_PLAYERS];
 // ================= MAIN =================
 main()
 {
-    print("Gamemode Cidade RP Full carregado.");
+    print("Cidade RP Full carregada com sucesso.");
     return 1;
 }
 
@@ -44,32 +39,17 @@ stock ContaPath(playerid, path[], size)
     format(path, size, "Contas/%s.ini", nome);
 }
 
-// ================= ADMIN CHECK =================
-stock IsAdmin(playerid, level)
-{
-    if (PlayerAdmin[playerid] < level)
-    {
-        SendClientMessage(playerid, 0xFF0000FF, "Você não tem permissão.");
-        return 0;
-    }
-    return 1;
-}
-
 // ================= CONNECT =================
 public OnPlayerConnect(playerid)
 {
     Logado[playerid] = false;
-    TemCelular[playerid] = 0;
-    PlayerAdmin[playerid] = 0;
-    PlayerEmprego[playerid] = 0;
-
+    GPSAtivo[playerid] = false;
     TogglePlayerControllable(playerid, false);
-    ResetPlayerMoney(playerid);
 
     new path[64];
     ContaPath(playerid, path, sizeof(path));
 
-    if (dini_Exists(path))
+    if(dini_Exists(path))
     {
         ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
             "Login", "Digite sua senha:", "Entrar", "Sair");
@@ -82,25 +62,30 @@ public OnPlayerConnect(playerid)
     return 1;
 }
 
-// ================= DIALOG RESPONSE =================
+// ================= DIALOG =================
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
-    if (!response) return Kick(playerid);
+    if(!response) return Kick(playerid);
 
     new path[64];
     ContaPath(playerid, path, sizeof(path));
 
-    // ================= REGISTRO =================
+    // ===== REGISTRO =====
     if(dialogid == DIALOG_REGISTER)
     {
+        if(strlen(inputtext) < 3)
+        {
+            ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD,
+                "Registro", "Senha muito curta!", "Registrar", "Sair");
+            return 1;
+        }
+
         dini_Create(path);
         dini_Set(path, "Senha", inputtext);
         dini_IntSet(path, "Dinheiro", 500);
         dini_IntSet(path, "Admin", 0);
-        dini_IntSet(path, "Celular", 1);
         dini_IntSet(path, "Emprego", 0);
 
-        // SALVAR SPAWN PADRÃO (ANTI-CRASH)
         dini_FloatSet(path, "X", SPAWN_X);
         dini_FloatSet(path, "Y", SPAWN_Y);
         dini_FloatSet(path, "Z", SPAWN_Z);
@@ -109,27 +94,17 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         dini_IntSet(path, "Skin", SPAWN_SKIN);
 
         Logado[playerid] = true;
-        TemCelular[playerid] = 1;
-
-        SpawnX[playerid] = SPAWN_X;
-        SpawnY[playerid] = SPAWN_Y;
-        SpawnZ[playerid] = SPAWN_Z;
-        SpawnInt[playerid] = SPAWN_INT;
-        SpawnVW[playerid] = SPAWN_VW;
-        SpawnSkin[playerid] = SPAWN_SKIN;
-
         TogglePlayerControllable(playerid, true);
         SpawnPlayer(playerid);
         return 1;
     }
 
-    // ================= LOGIN =================
+    // ===== LOGIN =====
     if(dialogid == DIALOG_LOGIN)
     {
         new senha[32];
         dini_Get(path, "Senha", senha);
 
-        // CORREÇÃO DO strcmp
         if(strcmp(inputtext, senha, false) != 0)
         {
             SendClientMessage(playerid, 0xFF0000FF, "Senha incorreta!");
@@ -139,47 +114,38 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         }
 
         Logado[playerid] = true;
-        TemCelular[playerid] = dini_Int(path, "Celular");
-        PlayerAdmin[playerid] = dini_Int(path, "Admin");
-        PlayerEmprego[playerid] = dini_Int(path, "Emprego");
-
-        SpawnX[playerid] = dini_Float(path, "X");
-        SpawnY[playerid] = dini_Float(path, "Y");
-        SpawnZ[playerid] = dini_Float(path, "Z");
-
-        // ANTI X=0 Y=0
-        if(SpawnX[playerid] == 0.0 && SpawnY[playerid] == 0.0)
-        {
-            SpawnX[playerid] = SPAWN_X;
-            SpawnY[playerid] = SPAWN_Y;
-            SpawnZ[playerid] = SPAWN_Z;
-        }
-
-        SpawnInt[playerid] = dini_Int(path, "Interior");
-        SpawnVW[playerid] = dini_Int(path, "VW");
-        SpawnSkin[playerid] = dini_Int(path, "Skin");
 
         ResetPlayerMoney(playerid);
         GivePlayerMoney(playerid, dini_Int(path, "Dinheiro"));
+
+        SetPlayerInterior(playerid, dini_Int(path, "Interior"));
+        SetPlayerVirtualWorld(playerid, dini_Int(path, "VW"));
+        SetPlayerSkin(playerid, dini_Int(path, "Skin"));
+        SetPlayerPos(playerid,
+            dini_Float(path, "X"),
+            dini_Float(path, "Y"),
+            dini_Float(path, "Z"));
 
         TogglePlayerControllable(playerid, true);
         SpawnPlayer(playerid);
         return 1;
     }
 
-    // ================= MENU =================
-    if(dialogid == DIALOG_MENU)
+    // ===== GPS =====
+    if(dialogid == DIALOG_GPS)
     {
-        if(listitem == 0)
-            SendClientMessage(playerid, -1, "Empregos: /policia /medico /taxi /mecanico");
-        else if(listitem == 1)
-            SendClientMessage(playerid, -1, "GPS informativo (sem teleport).");
-        else if(listitem == 2)
-            SendClientMessage(playerid, -1, "Casas disponíveis em breve.");
+        DisablePlayerCheckpoint(playerid);
+
+        if(listitem == 0) SetPlayerCheckpoint(playerid, 1555.0, -1675.0, 16.2, 5.0); // Prefeitura LS
+        if(listitem == 1) SetPlayerCheckpoint(playerid, 1172.0, -1323.0, 15.4, 5.0); // Hospital
+        if(listitem == 2) SetPlayerCheckpoint(playerid, 2102.0, -1786.0, 13.5, 5.0); // Concessionária
+
+        GPSAtivo[playerid] = true;
+        SendClientMessage(playerid, 0x00FF00FF, "GPS marcado no mapa (ponto vermelho).");
         return 1;
     }
 
-    return 0;
+    return 1;
 }
 
 // ================= SPAWN =================
@@ -190,18 +156,18 @@ public OnPlayerSpawn(playerid)
 }
 
 // ================= COMANDOS =================
-CMD:menu(playerid)
+CMD:gps(playerid)
 {
-    ShowPlayerDialog(playerid, DIALOG_MENU, DIALOG_STYLE_LIST,
-        "Menu Cidade RP", "Empregos\nGPS\nCasas", "Selecionar", "Fechar");
+    ShowPlayerDialog(playerid, DIALOG_GPS, DIALOG_STYLE_LIST,
+        "GPS", "Prefeitura LS\nHospital\nConcessionária", "Marcar", "Cancelar");
     return 1;
 }
 
-CMD:dinheiro(playerid)
+CMD:cancelargps(playerid)
 {
-    new msg[64];
-    format(msg, sizeof(msg), "Seu dinheiro: $%d", GetPlayerMoney(playerid));
-    SendClientMessage(playerid, -1, msg);
+    DisablePlayerCheckpoint(playerid);
+    GPSAtivo[playerid] = false;
+    SendClientMessage(playerid, 0xFF0000FF, "GPS cancelado.");
     return 1;
 }
 
@@ -210,24 +176,17 @@ public OnPlayerDisconnect(playerid, reason)
 {
     if(!Logado[playerid]) return 1;
 
-    new path[64];
-    new Float:x, y, z;
+    new path[64], Float:x, y, z;
     ContaPath(playerid, path, sizeof(path));
-
     GetPlayerPos(playerid, x, y, z);
 
     dini_IntSet(path, "Dinheiro", GetPlayerMoney(playerid));
-    dini_IntSet(path, "Celular", TemCelular[playerid]);
-    dini_IntSet(path, "Admin", PlayerAdmin[playerid]);
-    dini_IntSet(path, "Emprego", PlayerEmprego[playerid]);
-
     dini_FloatSet(path, "X", x);
     dini_FloatSet(path, "Y", y);
     dini_FloatSet(path, "Z", z);
     dini_IntSet(path, "Interior", GetPlayerInterior(playerid));
     dini_IntSet(path, "VW", GetPlayerVirtualWorld(playerid));
     dini_IntSet(path, "Skin", GetPlayerSkin(playerid));
-
     return 1;
 }
 
