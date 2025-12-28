@@ -2,7 +2,6 @@
 #include <dini>
 #include <zcmd>
 #include <sscanf2>
-#define DIALOG_EMPREGOS 300
 
 // ================= DIALOGS =================
 #define DIALOG_LOGIN    1
@@ -19,6 +18,7 @@
 #define PREF_LS_Z 18.8
 #define DIALOG_PREFEITURA 400
 #define DIALOG_EMPREGOS   401
+#define DIALOG_EMPREGOS 300
 
 #define PREF_SF_X -2765.0
 #define PREF_SF_Y 375.0
