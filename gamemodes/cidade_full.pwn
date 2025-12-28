@@ -129,19 +129,35 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     }
 
     // PREFEITURA
-    if(dialogid == DIALOG_PREFEITURA)
+    if(dialogid == DIALOG_MENU)
+{
+    if(listitem == 0)
     {
-        if(listitem == 0)
-            ShowPlayerDialog(playerid, DIALOG_EMPREGOS, DIALOG_STYLE_LIST,
-            "Empregos", "Polícia\nSAMU\nTaxi\nMecânico", "Selecionar", "Voltar");
-
-        if(listitem == 1)
-        {
-            PlayerEmprego[playerid] = EMPREGO_NENHUM;
-            SendClientMessage(playerid, -1, "Você saiu do emprego.");
-        }
-        return 1;
+        ShowPlayerDialog(playerid, DIALOG_PREFEITURA, DIALOG_STYLE_LIST,
+        "Prefeitura", "Ver Empregos\nSair do Emprego", "Selecionar", "Fechar");
     }
+    if(listitem == 1)
+    {
+        ShowPlayerDialog(playerid, DIALOG_GPS, DIALOG_STYLE_LIST,
+        "GPS", "Prefeitura LS\nPrefeitura SF\nPrefeitura LV", "Marcar", "Cancelar");
+    }
+    return 1;
+}
+
+if(dialogid == DIALOG_PREFEITURA)
+{
+    if(listitem == 0)
+    {
+        ShowPlayerDialog(playerid, DIALOG_EMPREGOS, DIALOG_STYLE_LIST,
+        "Empregos", "Polícia\nSAMU\nTaxi\nMecânico", "Selecionar", "Voltar");
+    }
+    if(listitem == 1)
+    {
+        PlayerEmprego[playerid] = EMPREGO_NENHUM;
+        SendClientMessage(playerid, -1, "Você saiu do emprego.");
+    }
+    return 1;
+}
 
     // EMPREGOS
     if(dialogid == DIALOG_EMPREGOS)
