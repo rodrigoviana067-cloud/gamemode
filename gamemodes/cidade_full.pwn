@@ -178,16 +178,24 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         switch(listitem)
         {
             case 0:
+            {
                 SetPlayerCheckpoint(playerid, 1555.0, -1675.0, 16.2, 5.0); // LS
                 break;
+            }
             case 1:
-                SetPlayerCheckpoint(playerid, -1987.0, 138.0, 27.6, 5.0);  // SF
+            {
+                SetPlayerCheckpoint(playerid, -1987.0, 138.0, 27.6, 5.0); // SF
                 break;
+            }
             case 2:
-                SetPlayerCheckpoint(playerid, 1377.0, 2329.0, 10.8, 5.0);  // LV
+            {
+                SetPlayerCheckpoint(playerid, 1377.0, 2329.0, 10.8, 5.0); // LV
                 break;
+            }
             default:
+            {
                 return 1;
+            }
         }
 
         SendClientMessage(playerid, 0x00FF00FF, "GPS marcado no mapa.");
