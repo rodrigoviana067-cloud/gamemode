@@ -65,15 +65,12 @@ public OnPlayerConnect(playerid)
     ContaPath(playerid, path, sizeof(path));
 
     if(dini_Exists(path))
-    {
         ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
             "Login", "Digite sua senha:", "Entrar", "Sair");
-    }
     else
-    {
         ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD,
             "Registro", "Crie sua senha:", "Registrar", "Sair");
-    }
+
     return 1;
 }
 
@@ -87,17 +84,6 @@ public OnPlayerDisconnect(playerid, reason)
     return 1;
 }
 
-public OnPlayerCommandPerformed(playerid, cmdtext[], success)
-{
-    if(!success)
-    {
-        SendClientMessage(playerid, 0xFF4444FF,
-            "Comando inválido. Use /ajuda para ver a lista de comandos.");
-        return 1;
-    }
-    return 1;
-}
-
 // ================= SPAWN =================
 public OnPlayerSpawn(playerid)
 {
@@ -108,7 +94,7 @@ public OnPlayerSpawn(playerid)
     return 1;
 }
 
-// ================= DIALOGS =================
+// ================= DIALOG RESPONSE =================
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
     if(!response) return 1;
@@ -131,6 +117,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 
         Logado[playerid] = true;
         PlayerEmprego[playerid] = dini_Int(path, "Emprego");
+
         TogglePlayerControllable(playerid, true);
         SpawnPlayer(playerid);
         return 1;
@@ -153,7 +140,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(dialogid == DIALOG_MENU)
     {
         if(listitem == 0) AbrirPrefeitura(playerid);
-        else if(listitem == 1) AbrirGPS(playerid);
+        if(listitem == 1) AbrirGPS(playerid);
         return 1;
     }
 
@@ -188,13 +175,17 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     {
         DisablePlayerCheckpoint(playerid);
 
-        if(listitem == 0) SetPlayerCheckpoint(playerid, 1555.0, -1675.0, 16.2, 5.0);
-        else if(listitem == 1) SetPlayerCheckpoint(playerid, -1987.0, 138.0, 27.6, 5.0);
-        else if(listitem == 2) SetPlayerCheckpoint(playerid, 1377.0, 2329.0, 10.8, 5.0);
+        switch(listitem)
+        {
+            case 0: SetPlayerCheckpoint(playerid, 1555.0, -1675.0, 16.2, 5.0); break;
+            case 1: SetPlayerCheckpoint(playerid, -1987.0, 138.0, 27.6, 5.0); break;
+            case 2: SetPlayerCheckpoint(playerid, 1377.0, 2329.0, 10.8, 5.0); break;
+        }
 
         SendClientMessage(playerid, 0x00FF00FF, "GPS marcado no mapa.");
         return 1;
     }
+
     return 1;
 }
 
@@ -202,7 +193,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 CMD:menu(playerid)
 {
     if(!Logado[playerid]) return 1;
-
     ShowPlayerDialog(playerid, DIALOG_MENU, DIALOG_STYLE_LIST,
         "Menu",
         "Prefeitura\nGPS",
@@ -245,5 +235,15 @@ public OnGameModeInit()
     SetGameModeText("Cidade RP Full");
     SetTimer("PagamentoSalario", 600000, true);
     return 1;
+public OnPlayerCommandPerformed(playerid, cmdtext[], success)
+{
+    if(!success)
+    {
+        SendClientMessage(playerid, 0xFF4444FF,
+            "Comando inválido! Use /menu ou /ajuda para ver todos os comandos disponíveis.");
+        return 1;
+    }
+    return 1;
 }
 
+}
