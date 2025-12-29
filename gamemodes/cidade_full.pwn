@@ -247,13 +247,3 @@ public OnGameModeInit()
     return 1;
 }
 
-public OnPlayerCommandPerformed(playerid, cmdtext[], success)
-{
-    if(!success)
-    {
-        SendClientMessage(playerid, 0xFF4444FF,
-            "Comando inválido. Use /menu ou /ajuda para ver os comandos disponíveis.");
-        return 1;
-    }
-    return 1;
-}
