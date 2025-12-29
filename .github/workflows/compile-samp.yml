@@ -45,7 +45,10 @@ jobs:
           [ -s "$file" ] || continue
           name=$(basename "$file" .pwn)
           echo "▶ Compilando gamemode: $file"
-          ./pawnc-3.10.10-linux/bin/pawncc "$file" -iinclude -o"compiled/gamemodes/$name.amx"
+          ./pawnc-3.10.10-linux/bin/pawncc "$file" \
+            -iinclude \
+            -i./pawnc-3.10.10-linux/include \
+            -o"compiled/gamemodes/$name.amx"
         done
 
     # 5️⃣ Compilar filterscripts
@@ -57,10 +60,13 @@ jobs:
           [ -s "$file" ] || continue
           name=$(basename "$file" .pwn)
           echo "▶ Compilando filterscript: $file"
-          ./pawnc-3.10.10-linux/bin/pawncc "$file" -iinclude -o"compiled/filterscripts/$name.amx"
+          ./pawnc-3.10.10-linux/bin/pawncc "$file" \
+            -iinclude \
+            -i./pawnc-3.10.10-linux/include \
+            -o"compiled/filterscripts/$name.amx"
         done
 
-    # 6️⃣ Upload dos AMX
+    # 6️⃣ Upload dos AMX compilados
     - name: Upload dos AMX
       uses: actions/upload-artifact@v4
       with:
