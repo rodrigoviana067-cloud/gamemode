@@ -1,6 +1,5 @@
 #include <a_samp>
 #include <zcmd>
-#include <sscanf2>
 #include <dini>
 
 // ================= DIALOGS =================
@@ -16,7 +15,7 @@
 #define EMPREGO_POLICIA  1
 #define EMPREGO_SAMU     2
 #define EMPREGO_TAXI     3
-#define EMPREGO_MEC     4
+#define EMPREGO_MEC      4
 
 // ================= VARIÁVEIS =================
 new bool:Logado[MAX_PLAYERS];
@@ -36,12 +35,30 @@ stock ContaPath(playerid, path[], size)
     format(path, size, "Contas/%s.ini", nome);
 }
 
+// ================= MENUS =================
+stock AbrirPrefeitura(playerid)
+{
+    ShowPlayerDialog(playerid, DIALOG_PREFEITURA, DIALOG_STYLE_LIST,
+        "Prefeitura",
+        "Ver Empregos\nSair do Emprego",
+        "Selecionar", "Fechar");
+    return 1;
+}
+
+stock AbrirGPS(playerid)
+{
+    ShowPlayerDialog(playerid, DIALOG_GPS, DIALOG_STYLE_LIST,
+        "GPS",
+        "Prefeitura LS\nPrefeitura SF\nPrefeitura LV",
+        "Marcar", "Cancelar");
+    return 1;
+}
+
 // ================= CONNECT =================
 public OnPlayerConnect(playerid)
 {
     Logado[playerid] = false;
     PlayerEmprego[playerid] = EMPREGO_NENHUM;
-
     TogglePlayerControllable(playerid, false);
 
     new path[64];
@@ -49,22 +66,21 @@ public OnPlayerConnect(playerid)
 
     if(dini_Exists(path))
         ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
-        "Login", "Digite sua senha:", "Entrar", "Sair");
+            "Login", "Digite sua senha:", "Entrar", "Sair");
     else
         ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD,
-        "Registro", "Crie sua senha:", "Registrar", "Sair");
+            "Registro", "Crie sua senha:", "Registrar", "Sair");
 
     return 1;
 }
 
 public OnPlayerDisconnect(playerid, reason)
 {
+    if(!Logado[playerid]) return 1;
+
     new path[64];
     ContaPath(playerid, path, sizeof(path));
-
-    if(Logado[playerid])
-        dini_IntSet(path, "Emprego", PlayerEmprego[playerid]);
-
+    dini_IntSet(path, "Emprego", PlayerEmprego[playerid]);
     return 1;
 }
 
@@ -92,10 +108,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         new senha[32];
         dini_Get(path, "Senha", senha);
 
-        if(strcmp(inputtext, senha, false))
+        if(strcmp(inputtext, senha, false) != 0)
         {
             ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
-            "Login", "Senha incorreta:", "Entrar", "Sair");
+                "Login", "Senha incorreta:", "Entrar", "Sair");
             return 1;
         }
 
@@ -121,55 +137,30 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     }
 
     // MENU
-    stock AbrirPrefeitura(playerid)
-{
-    ShowPlayerDialog(playerid, DIALOG_PREFEITURA, DIALOG_STYLE_LIST,
-        "Prefeitura",
-        "Ver Empregos\nSair do Emprego",
-        "Selecionar", "Fechar");
-    return 1;
-}
-
-stock AbrirGPS(playerid)
-{
-    ShowPlayerDialog(playerid, DIALOG_GPS, DIALOG_STYLE_LIST,
-        "GPS",
-        "Prefeitura",
-        "Marcar", "Cancelar");
-    return 1;
-}
+    if(dialogid == DIALOG_MENU)
+    {
+        if(listitem == 0) AbrirPrefeitura(playerid);
+        if(listitem == 1) AbrirGPS(playerid);
+        return 1;
+    }
 
     // PREFEITURA
-    if(dialogid == DIALOG_MENU)
-{
-    if(dialogid == DIALOG_MENU)
-{
-    if(listitem == 0) AbrirPrefeitura(playerid);
-    if(listitem == 1) AbrirGPS(playerid);
-    return 1;
-}
-    if(listitem == 1)
+    if(dialogid == DIALOG_PREFEITURA)
     {
-        ShowPlayerDialog(playerid, DIALOG_GPS, DIALOG_STYLE_LIST,
-        "GPS", "Prefeitura LS\nPrefeitura SF\nPrefeitura LV", "Marcar", "Cancelar");
+        if(listitem == 0)
+        {
+            ShowPlayerDialog(playerid, DIALOG_EMPREGOS, DIALOG_STYLE_LIST,
+                "Empregos",
+                "Polícia\nSAMU\nTaxi\nMecânico",
+                "Selecionar", "Voltar");
+        }
+        else if(listitem == 1)
+        {
+            PlayerEmprego[playerid] = EMPREGO_NENHUM;
+            SendClientMessage(playerid, -1, "Você saiu do emprego.");
+        }
+        return 1;
     }
-    return 1;
-}
-
-if(dialogid == DIALOG_PREFEITURA)
-{
-    if(listitem == 0)
-    {
-        ShowPlayerDialog(playerid, DIALOG_EMPREGOS, DIALOG_STYLE_LIST,
-        "Empregos", "Polícia\nSAMU\nTaxi\nMecânico", "Selecionar", "Voltar");
-    }
-    if(listitem == 1)
-    {
-        PlayerEmprego[playerid] = EMPREGO_NENHUM;
-        SendClientMessage(playerid, -1, "Você saiu do emprego.");
-    }
-    return 1;
-}
 
     // EMPREGOS
     if(dialogid == DIALOG_EMPREGOS)
@@ -184,12 +175,11 @@ if(dialogid == DIALOG_PREFEITURA)
     {
         DisablePlayerCheckpoint(playerid);
 
-        switch(listitem)
-        {
-            case 0: SetPlayerCheckpoint(playerid, 1555.0, -1675.0, 16.2, 5.0); // Prefeitura LS
-            case 1: SetPlayerCheckpoint(playerid, -1987.0, 138.0, 27.6, 5.0); // Prefeitura SF
-            case 2: SetPlayerCheckpoint(playerid, 1377.0, 2329.0, 10.8, 5.0); // Prefeitura LV
-        }
+        if(listitem == 0) SetPlayerCheckpoint(playerid, 1555.0, -1675.0, 16.2, 5.0); // LS
+        if(listitem == 1) SetPlayerCheckpoint(playerid, -1987.0, 138.0, 27.6, 5.0);  // SF
+        if(listitem == 2) SetPlayerCheckpoint(playerid, 1377.0, 2329.0, 10.8, 5.0);  // LV
+
+        SendClientMessage(playerid, 0x00FF00FF, "GPS marcado no mapa.");
         return 1;
     }
 
@@ -202,7 +192,9 @@ CMD:menu(playerid)
     if(!Logado[playerid]) return 1;
 
     ShowPlayerDialog(playerid, DIALOG_MENU, DIALOG_STYLE_LIST,
-    "Menu", "Prefeitura\nGPS", "Selecionar", "Fechar");
+        "Menu",
+        "Prefeitura\nGPS",
+        "Selecionar", "Fechar");
     return 1;
 }
 
@@ -217,13 +209,6 @@ CMD:gps(playerid)
 {
     if(!Logado[playerid]) return 1;
     AbrirGPS(playerid);
-    return 1;
-}
-
-CMD:gps(playerid)
-{
-    ShowPlayerDialog(playerid, DIALOG_GPS, DIALOG_STYLE_LIST,
-    "GPS", "Prefeitura LS\nPrefeitura SF\nPrefeitura LV", "Marcar", "Cancelar");
     return 1;
 }
 
@@ -246,6 +231,6 @@ public PagamentoSalario()
 public OnGameModeInit()
 {
     SetGameModeText("Cidade RP Full");
-    SetTimer("PagamentoSalario", 600000, true);
+    SetTimer("PagamentoSalario", 600000, true); // 10 minutos
     return 1;
 }
