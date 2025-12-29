@@ -2,37 +2,30 @@
 #include <zcmd>
 #include <dini>
 
-// INCLUDES DO PROJETO
 #include "cfg_constants.inc"
 #include "player_data.inc"
 #include "menus.inc"
 #include "commands.inc"
-#include "salario.inc"
 
-// ================= ENTRY POINT =================
+// ================= SALÁRIO =================
+forward PagamentoSalario();
+public PagamentoSalario()
+{
+    for(new i = 0; i < MAX_PLAYERS; i++)
+    {
+        if(IsPlayerConnected(i) && Logado[i] && PlayerEmprego[i] != EMPREGO_NENHUM)
+        {
+            GivePlayerMoney(i, 1000);
+            SendClientMessage(i, 0x00FF00FF, "Salário recebido.");
+        }
+    }
+    return 1;
+}
+
+// ================= INIT =================
 public OnGameModeInit()
 {
     SetGameModeText("Cidade RP Full");
-    SetTimer("PagamentoSalario", 600000, true); // 10 minutos
-
-    print("Cidade Full carregada com sucesso.");
-    return 1;
-}
-
-public OnGameModeExit()
-{
-    print("Cidade Full encerrada.");
-    return 1;
-}
-
-// Mensagem de comando inválido
-public OnPlayerCommandPerformed(playerid, cmdtext[], success)
-{
-    if(!success)
-    {
-        SendClientMessage(playerid, 0xFF4444FF,
-            "Comando inválido! Use /menu ou /ajuda para ver todos os comandos disponíveis.");
-        return 1;
-    }
+    SetTimer("PagamentoSalario", 600000, true);
     return 1;
 }
