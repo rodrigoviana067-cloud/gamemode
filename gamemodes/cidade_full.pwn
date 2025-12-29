@@ -54,7 +54,7 @@ stock AbrirGPS(playerid)
     return 1;
 }
 
-// ================= CONNECT =================
+// ================= CONNECT/DISCONNECT =================
 public OnPlayerConnect(playerid)
 {
     Logado[playerid] = false;
@@ -214,6 +214,19 @@ CMD:gps(playerid)
     return 1;
 }
 
+// ================= AJUDA =================
+CMD:ajuda(playerid)
+{
+    SendClientMessage(playerid, 0x00FFFF00, "-------- COMANDOS DISPONÍVEIS --------");
+    SendClientMessage(playerid, 0x00FFFF00, "/menu - Abre o menu principal");
+    SendClientMessage(playerid, 0x00FFFF00, "/prefeitura - Abre a prefeitura");
+    SendClientMessage(playerid, 0x00FFFF00, "/gps - Abre o GPS");
+    SendClientMessage(playerid, 0x00FFFF00, "/dinheiro - Mostra seu saldo");
+    SendClientMessage(playerid, 0x00FFFF00, "/ajuda - Mostra todos os comandos");
+    SendClientMessage(playerid, 0x00FFFF00, "------------------------------------");
+    return 1;
+}
+
 // ================= SALÁRIO =================
 forward PagamentoSalario();
 public PagamentoSalario()
@@ -233,8 +246,11 @@ public PagamentoSalario()
 public OnGameModeInit()
 {
     SetGameModeText("Cidade RP Full");
-    SetTimer("PagamentoSalario", 600000, true);
+    SetTimer("PagamentoSalario", 600000, true); // 10 minutos
     return 1;
+}
+
+// ================= COMANDO INVÁLIDO =================
 public OnPlayerCommandPerformed(playerid, cmdtext[], success)
 {
     if(!success)
@@ -244,6 +260,4 @@ public OnPlayerCommandPerformed(playerid, cmdtext[], success)
         return 1;
     }
     return 1;
-}
-
 }
