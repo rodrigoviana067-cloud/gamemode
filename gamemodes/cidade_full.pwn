@@ -87,6 +87,17 @@ public OnPlayerDisconnect(playerid, reason)
     return 1;
 }
 
+public OnPlayerCommandPerformed(playerid, cmdtext[], success)
+{
+    if(!success)
+    {
+        SendClientMessage(playerid, 0xFF4444FF,
+            "Comando inválido. Use /ajuda para ver a lista de comandos.");
+        return 1;
+    }
+    return 1;
+}
+
 // ================= SPAWN =================
 public OnPlayerSpawn(playerid)
 {
