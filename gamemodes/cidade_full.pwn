@@ -1,6 +1,10 @@
 #include <a_samp>
 #include <zcmd>
 #include <dini>
+main()
+{
+    print("Cidade RP Full carregada com sucesso.");
+}
 
 // ================= DIALOGS =================
 #define DIALOG_LOGIN        1
