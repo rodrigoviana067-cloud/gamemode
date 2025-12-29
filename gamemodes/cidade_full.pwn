@@ -121,21 +121,33 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     }
 
     // MENU
-    if(dialogid == DIALOG_MENU)
-    {
-        if(listitem == 0) cmd_prefeitura(playerid);
-        if(listitem == 1) cmd_gps(playerid);
-        return 1;
-    }
+    stock AbrirPrefeitura(playerid)
+{
+    ShowPlayerDialog(playerid, DIALOG_PREFEITURA, DIALOG_STYLE_LIST,
+        "Prefeitura",
+        "Ver Empregos\nSair do Emprego",
+        "Selecionar", "Fechar");
+    return 1;
+}
+
+stock AbrirGPS(playerid)
+{
+    ShowPlayerDialog(playerid, DIALOG_GPS, DIALOG_STYLE_LIST,
+        "GPS",
+        "Prefeitura",
+        "Marcar", "Cancelar");
+    return 1;
+}
 
     // PREFEITURA
     if(dialogid == DIALOG_MENU)
 {
-    if(listitem == 0)
-    {
-        ShowPlayerDialog(playerid, DIALOG_PREFEITURA, DIALOG_STYLE_LIST,
-        "Prefeitura", "Ver Empregos\nSair do Emprego", "Selecionar", "Fechar");
-    }
+    if(dialogid == DIALOG_MENU)
+{
+    if(listitem == 0) AbrirPrefeitura(playerid);
+    if(listitem == 1) AbrirGPS(playerid);
+    return 1;
+}
     if(listitem == 1)
     {
         ShowPlayerDialog(playerid, DIALOG_GPS, DIALOG_STYLE_LIST,
@@ -196,8 +208,15 @@ CMD:menu(playerid)
 
 CMD:prefeitura(playerid)
 {
-    ShowPlayerDialog(playerid, DIALOG_PREFEITURA, DIALOG_STYLE_LIST,
-    "Prefeitura", "Ver Empregos\nSair do Emprego", "Selecionar", "Fechar");
+    if(!Logado[playerid]) return 1;
+    AbrirPrefeitura(playerid);
+    return 1;
+}
+
+CMD:gps(playerid)
+{
+    if(!Logado[playerid]) return 1;
+    AbrirGPS(playerid);
     return 1;
 }
 
