@@ -54,7 +54,7 @@ stock AbrirGPS(playerid)
     return 1;
 }
 
-// ================= CONNECT/DISCONNECT =================
+// ================= CONNECT =================
 public OnPlayerConnect(playerid)
 {
     Logado[playerid] = false;
@@ -177,9 +177,15 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 
         switch(listitem)
         {
-            case 0: SetPlayerCheckpoint(playerid, 1555.0, -1675.0, 16.2, 5.0); break;
-            case 1: SetPlayerCheckpoint(playerid, -1987.0, 138.0, 27.6, 5.0); break;
-            case 2: SetPlayerCheckpoint(playerid, 1377.0, 2329.0, 10.8, 5.0); break;
+            case 0:
+                SetPlayerCheckpoint(playerid, 1555.0, -1675.0, 16.2, 5.0);
+                break;
+            case 1:
+                SetPlayerCheckpoint(playerid, -1987.0, 138.0, 27.6, 5.0);
+                break;
+            case 2:
+                SetPlayerCheckpoint(playerid, 1377.0, 2329.0, 10.8, 5.0);
+                break;
         }
 
         SendClientMessage(playerid, 0x00FF00FF, "GPS marcado no mapa.");
@@ -214,19 +220,6 @@ CMD:gps(playerid)
     return 1;
 }
 
-// ================= AJUDA =================
-CMD:ajuda(playerid)
-{
-    SendClientMessage(playerid, 0x00FFFF00, "-------- COMANDOS DISPONÍVEIS --------");
-    SendClientMessage(playerid, 0x00FFFF00, "/menu - Abre o menu principal");
-    SendClientMessage(playerid, 0x00FFFF00, "/prefeitura - Abre a prefeitura");
-    SendClientMessage(playerid, 0x00FFFF00, "/gps - Abre o GPS");
-    SendClientMessage(playerid, 0x00FFFF00, "/dinheiro - Mostra seu saldo");
-    SendClientMessage(playerid, 0x00FFFF00, "/ajuda - Mostra todos os comandos");
-    SendClientMessage(playerid, 0x00FFFF00, "------------------------------------");
-    return 1;
-}
-
 // ================= SALÁRIO =================
 forward PagamentoSalario();
 public PagamentoSalario()
@@ -246,7 +239,7 @@ public PagamentoSalario()
 public OnGameModeInit()
 {
     SetGameModeText("Cidade RP Full");
-    SetTimer("PagamentoSalario", 600000, true); // 10 minutos
+    SetTimer("PagamentoSalario", 600000, true);
     return 1;
 }
 
