@@ -17,6 +17,11 @@ CMD:dinheiro(playerid)
 // ======================
 CMD:ajuda(playerid)
 {
-    SendClientMessage(playerid, -1, "Comandos: /dinheiro /ajuda");
+    SendClientMessage(playerid, -1, "=== COMANDOS DISPONÍVEIS ===");
+    SendClientMessage(playerid, -1, "/menu - Menu principal");
+    SendClientMessage(playerid, -1, "/gps - Localizações da cidade");
+    SendClientMessage(playerid, -1, "/prefeitura - Empregos");
+    SendClientMessage(playerid, -1, "/dinheiro - Ver seu dinheiro");
     return 1;
 }
+
