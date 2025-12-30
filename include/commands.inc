@@ -144,10 +144,7 @@ if(dialogid == DIALOG_GPS)
 CMD:menu(playerid)
 {
     if(!Logado[playerid]) return 1;
-    ShowPlayerDialog(playerid, DIALOG_MENU, DIALOG_STYLE_LIST,
-        "Menu",
-        "Prefeitura\nGPS",
-        "Selecionar", "Fechar");
+    AbrirMenuPrincipal(playerid);
     return 1;
 }
 
