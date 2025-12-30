@@ -29,3 +29,8 @@ public OnGameModeInit()
     SetTimer("PagamentoSalario", 600000, true);
     return 1;
 }
+
+main()
+{
+    print("Cidade Full carregada com sucesso.");
+}
