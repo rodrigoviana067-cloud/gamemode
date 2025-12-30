@@ -1,36 +1,53 @@
-#include <a_samp>
-#include <zcmd>
-#include <dini>
-
-#include "cfg_constants.inc"
-#include "player_data.inc"
-#include "menus.inc"
-#include "commands.inc"
-
-// ================= SALÁRIO =================
-forward PagamentoSalario();
-public PagamentoSalario()
+public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
-    for(new i = 0; i < MAX_PLAYERS; i++)
+    if(!response) return 1;
+
+    switch(dialogid)
     {
-        if(IsPlayerConnected(i) && Logado[i] && PlayerEmprego[i] != EMPREGO_NENHUM)
+        case DIALOG_MENU:
         {
-            GivePlayerMoney(i, 1000);
-            SendClientMessage(i, 0x00FF00FF, "Salário recebido.");
+            if(listitem == 0) AbrirPrefeitura(playerid);
+            else if(listitem == 1) AbrirGPS(playerid);
+        }
+
+        case DIALOG_PREFEITURA:
+        {
+            if(listitem == 0)
+            {
+                ShowPlayerDialog(playerid, DIALOG_EMPREGOS, DIALOG_STYLE_LIST,
+                    "Empregos",
+                    "Polícia\nSAMU\nTaxi\nMecânico",
+                    "Selecionar", "Voltar");
+            }
+            else if(listitem == 1)
+            {
+                PlayerEmprego[playerid] = EMPREGO_NENHUM;
+                SendClientMessage(playerid, -1, "Você saiu do emprego.");
+            }
+        }
+
+        case DIALOG_EMPREGOS:
+        {
+            PlayerEmprego[playerid] = listitem + 1;
+            SendClientMessage(playerid, -1, "Emprego assumido com sucesso!");
+        }
+
+        case DIALOG_GPS:
+        {
+            DisablePlayerCheckpoint(playerid);
+
+            switch(listitem)
+            {
+                case 0:
+                    SetPlayerCheckpoint(1555.0, -1675.0, 16.2, 5.0);
+                case 1:
+                    SetPlayerCheckpoint(-1987.0, 138.0, 27.6, 5.0);
+                case 2:
+                    SetPlayerCheckpoint(1377.0, 2329.0, 10.8, 5.0);
+            }
+
+            SendClientMessage(playerid, 0x00FF00FF, "GPS marcado no mapa.");
         }
     }
     return 1;
-}
-
-// ================= INIT =================
-public OnGameModeInit()
-{
-    SetGameModeText("Cidade RP Full");
-    SetTimer("PagamentoSalario", 600000, true);
-    return 1;
-}
-
-main()
-{
-    print("Cidade Full carregada com sucesso.");
 }
