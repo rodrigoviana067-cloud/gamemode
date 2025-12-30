@@ -15,3 +15,12 @@ stock AbrirGPS(playerid)
         "Marcar", "Cancelar");
     return 1;
 }
+
+stock AbrirMenuPrincipal(playerid)
+{
+    ShowPlayerDialog(playerid, DIALOG_MENU, DIALOG_STYLE_LIST,
+        "Menu",
+        "Prefeitura\nGPS",
+        "Selecionar", "Fechar");
+    return 1;
+}
