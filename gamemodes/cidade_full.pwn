@@ -68,35 +68,41 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     ContaPath(playerid, path, sizeof(path));
 
     // ================= LOGIN =================
-    if (dialogid == DIALOG_LOGIN)
+{
+    if (!response)
     {
-        if (!response)
-        {
-            Kick(playerid);
-            return 1;
-        }
-
-        new senha[32];
-        dini_Get(path, "Senha", senha);
-
-        if (strcmp(inputtext, senha, false) != 0)
-        {
-            ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
-                "Login",
-                "Senha incorreta, tente novamente:",
-                "Entrar", "Sair");
-            return 1;
-        }
-
-        Logado[playerid] = true;
-        PlayerEmprego[playerid] = dini_Int(path, "Emprego");
-
-        TogglePlayerControllable(playerid, true);
-        SpawnPlayer(playerid);
-
-        SendClientMessage(playerid, -1, "Login realizado com sucesso!");
+        Kick(playerid);
         return 1;
     }
+
+    new senha[32];
+    dini_Get(path, "Senha", senha);
+
+    if (strcmp(inputtext, senha, false) != 0)
+    {
+        ShowPlayerDialog(
+            playerid,
+            DIALOG_LOGIN,
+            DIALOG_STYLE_PASSWORD,
+            "Login",
+            "Senha incorreta, tente novamente:",
+            "Entrar",
+            "Sair"
+        );
+        return 1;
+    }
+
+    // ✅ LOGIN CONFIRMADO
+    Logado[playerid] = true;
+    PlayerEmprego[playerid] = dini_Int(path, "Emprego");
+
+    TogglePlayerControllable(playerid, true);
+    SpawnPlayer(playerid);
+    SetCameraBehindPlayer(playerid); // 🔥 ESSENCIAL
+
+    SendClientMessage(playerid, -1, "✅ Login realizado com sucesso!");
+    return 1;
+}
 
     // ================= REGISTRO =================
     if (dialogid == DIALOG_REGISTER)
