@@ -1,17 +1,20 @@
-main() 
-{
-    print("Servidor Iniciado com Sucesso");
-}
-
+// ================= INCLUDES =================
 #include <a_samp>
 #include <zcmd>
 #include <dini>
 
-#include "cfg_constants.inc"   // defines gerais (cores, dialogs, empregos, posições)
-#include "player_data.inc"     // variáveis globais (Logado, PlayerEmprego, enums)
-#include "menus.inc"           // stocks de menus (ShowPlayerDialog)
-#include "commands.inc"        // OnDialogResponse + comandos
+#include "cfg_constants.inc"
+#include "player_data.inc"
+#include "menus.inc"
+#include "commands.inc"
 
+// ================= MAIN =================
+main()
+{
+    print("Servidor Iniciado com Sucesso");
+}
+
+// ================= GAMEMODE INIT =================
 public OnGameModeInit()
 {
     SetGameModeText("Cidade RP Full");
