@@ -1,10 +1,16 @@
+#if defined _cfg_constants_included
+    #endinput
+#endif
+#define _cfg_constants_included
+
 // ================= DIALOGS =================
 #define DIALOG_LOGIN        1
 #define DIALOG_REGISTER     2
-#define DIALOG_MENU         10
-#define DIALOG_PREFEITURA   20
-#define DIALOG_EMPREGOS     21
-#define DIALOG_GPS          30
+#define DIALOG_MENU_PRINCIPAL  100
+#define DIALOG_PREFEITURA      110
+#define DIALOG_EMPREGOS        111
+#define DIALOG_GPS             120
+#define DIALOG_AJUDA           130
 
 // ================= EMPREGOS =================
 #define EMPREGO_NENHUM   0
