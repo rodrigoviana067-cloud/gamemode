@@ -1,3 +1,8 @@
+main() 
+{
+    print("Servidor Iniciado com Sucesso");
+}
+
 #include <a_samp>
 #include <zcmd>
 #include <dini>
