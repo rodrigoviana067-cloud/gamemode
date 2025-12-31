@@ -7,11 +7,17 @@
 #include "menus.inc"
 #include "commands.inc"
 
+// =================================================
+// MAIN
+// =================================================
 main()
 {
     print("Cidade RP Full carregada com sucesso");
 }
 
+// =================================================
+// GAMEMODE INIT
+// =================================================
 public OnGameModeInit()
 {
     SetGameModeText("Cidade RP Full");
@@ -19,6 +25,9 @@ public OnGameModeInit()
     return 1;
 }
 
+// =================================================
+// PLAYER CONNECT
+// =================================================
 public OnPlayerConnect(playerid)
 {
     Logado[playerid] = false;
@@ -31,25 +40,41 @@ public OnPlayerConnect(playerid)
 
     if (dini_Exists(path))
     {
-        ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
+        ShowPlayerDialog(
+            playerid,
+            DIALOG_LOGIN,
+            DIALOG_STYLE_PASSWORD,
             "Login",
             "Digite sua senha:",
-            "Entrar", "Sair");
+            "Entrar",
+            "Sair"
+        );
     }
     else
     {
-        ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD,
+        ShowPlayerDialog(
+            playerid,
+            DIALOG_REGISTER,
+            DIALOG_STYLE_PASSWORD,
             "Registro",
             "Crie sua senha:",
-            "Registrar", "Sair");
+            "Registrar",
+            "Sair"
+        );
     }
     return 1;
 }
 
+// =================================================
+// DIALOG RESPONSE
+// =================================================
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
-    // dialogs dos comandos (/menu, /gps, etc)
-    if (HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext) == 1)
+    // ---------------------------------------------
+    // DIALOGS DOS COMANDOS (/menu, /gps, etc)
+    // ---------------------------------------------
+    new handled = HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext);
+    if (handled == 1)
         return 1;
 
     new path[64];
@@ -58,17 +83,26 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     // ================= LOGIN =================
     if (dialogid == DIALOG_LOGIN)
     {
-        if (!response) return Kick(playerid);
+        if (!response)
+        {
+            Kick(playerid);
+            return 1;
+        }
 
         new senha[32];
         dini_Get(path, "Senha", senha);
 
-        if (strcmp(inputtext, senha, false) !== 0)
+        if (strcmp(inputtext, senha, false) != 0)
         {
-            ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
+            ShowPlayerDialog(
+                playerid,
+                DIALOG_LOGIN,
+                DIALOG_STYLE_PASSWORD,
                 "Login",
                 "Senha incorreta, tente novamente:",
-                "Entrar", "Sair");
+                "Entrar",
+                "Sair"
+            );
             return 1;
         }
 
@@ -85,14 +119,23 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     // ================= REGISTRO =================
     if (dialogid == DIALOG_REGISTER)
     {
-        if (!response) return Kick(playerid);
+        if (!response)
+        {
+            Kick(playerid);
+            return 1;
+        }
 
         if (strlen(inputtext) < 3)
         {
-            ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD,
+            ShowPlayerDialog(
+                playerid,
+                DIALOG_REGISTER,
+                DIALOG_STYLE_PASSWORD,
                 "Registro",
                 "Senha muito curta (mín. 3 caracteres):",
-                "Registrar", "Sair");
+                "Registrar",
+                "Sair"
+            );
             return 1;
         }
 
