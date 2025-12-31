@@ -40,27 +40,17 @@ public OnPlayerConnect(playerid)
 
     if (dini_Exists(path))
     {
-        ShowPlayerDialog(
-            playerid,
-            DIALOG_LOGIN,
-            DIALOG_STYLE_PASSWORD,
+        ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
             "Login",
             "Digite sua senha:",
-            "Entrar",
-            "Sair"
-        );
+            "Entrar", "Sair");
     }
     else
     {
-        ShowPlayerDialog(
-            playerid,
-            DIALOG_REGISTER,
-            DIALOG_STYLE_PASSWORD,
+        ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD,
             "Registro",
             "Crie sua senha:",
-            "Registrar",
-            "Sair"
-        );
+            "Registrar", "Sair");
     }
     return 1;
 }
@@ -70,9 +60,7 @@ public OnPlayerConnect(playerid)
 // =================================================
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
-    // -----------------------------
     // Dialogs externos (GPS, etc)
-    // -----------------------------
     if (HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext))
         return 1;
 
@@ -93,15 +81,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 
         if (strcmp(inputtext, senha, false) != 0)
         {
-            ShowPlayerDialog(
-                playerid,
-                DIALOG_LOGIN,
-                DIALOG_STYLE_PASSWORD,
+            ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
                 "Login",
                 "Senha incorreta, tente novamente:",
-                "Entrar",
-                "Sair"
-            );
+                "Entrar", "Sair");
             return 1;
         }
 
@@ -126,22 +109,17 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 
         if (strlen(inputtext) < 3)
         {
-            ShowPlayerDialog(
-                playerid,
-                DIALOG_REGISTER,
-                DIALOG_STYLE_PASSWORD,
+            ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD,
                 "Registro",
                 "Senha muito curta (mín. 3 caracteres):",
-                "Registrar",
-                "Sair"
-            );
+                "Registrar", "Sair");
             return 1;
         }
 
         dini_Create(path);
         dini_Set(path, "Senha", inputtext);
         dini_IntSet(path, "Emprego", EMPREGO_NENHUM);
-        dini_IntSet(path, "Skin", 60); // skin inicial correta
+        dini_IntSet(path, "Skin", 60); // skin inicial
 
         Logado[playerid] = true;
         PlayerEmprego[playerid] = EMPREGO_NENHUM;
@@ -157,12 +135,15 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 }
 
 // =================================================
-// PLAYER SPAWN (ESSENCIAL PRA SKIN)
+// PLAYER SPAWN (SPAWN + SKIN CORRETOS)
 // =================================================
 public OnPlayerSpawn(playerid)
 {
     new Float:X, Float:Y, Float:Z, Float:A;
+    new path[64];
+    ContaPath(playerid, path, sizeof(path));
 
+    // Spawn global salvo por admin
     if (dini_Exists("spawn.ini"))
     {
         X = dini_Float("spawn.ini", "X");
@@ -172,6 +153,13 @@ public OnPlayerSpawn(playerid)
 
         SetPlayerPos(playerid, X, Y, Z);
         SetPlayerFacingAngle(playerid, A);
+    }
+
+    // Skin salva na conta
+    if (dini_Exists(path))
+    {
+        new skin = dini_Int(path, "Skin");
+        SetPlayerSkin(playerid, skin);
     }
 
     SetPlayerInterior(playerid, 0);
