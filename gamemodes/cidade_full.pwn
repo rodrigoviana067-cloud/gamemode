@@ -1,53 +1,49 @@
-public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
+#include <a_samp>
+#include <zcmd>
+#include <dini>
+
+// ================= INCLUDES DO PROJETO =================
+#include "cfg_constants.inc"
+#include "player_data.inc"
+#include "menus.inc"
+#include "commands.inc"
+
+// ================= VARIÁVEIS =================
+new bool:Logado[MAX_PLAYERS];
+new PlayerEmprego[MAX_PLAYERS];
+
+public OnGameModeInit()
 {
-    if(!response) return 1;
+    SetGameModeText("Cidade RP Full");
+    SetTimer("PagamentoSalario", 600000, true);
+    return 1;
+}
 
-    switch(dialogid)
+public OnPlayerConnect(playerid) { ... }
+public OnPlayerDisconnect(playerid, reason) { ... }
+public OnPlayerSpawn(playerid) { ... }
+public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]) { ... }
+
+forward PagamentoSalario();
+public PagamentoSalario()
+{
+    for(new i = 0; i < MAX_PLAYERS; i++)
     {
-        case DIALOG_MENU:
+        if(IsPlayerConnected(i) && Logado[i] && PlayerEmprego[i] != EMPREGO_NENHUM)
         {
-            if(listitem == 0) AbrirPrefeitura(playerid);
-            else if(listitem == 1) AbrirGPS(playerid);
-        }
-
-        case DIALOG_PREFEITURA:
-        {
-            if(listitem == 0)
-            {
-                ShowPlayerDialog(playerid, DIALOG_EMPREGOS, DIALOG_STYLE_LIST,
-                    "Empregos",
-                    "Polícia\nSAMU\nTaxi\nMecânico",
-                    "Selecionar", "Voltar");
-            }
-            else if(listitem == 1)
-            {
-                PlayerEmprego[playerid] = EMPREGO_NENHUM;
-                SendClientMessage(playerid, -1, "Você saiu do emprego.");
-            }
-        }
-
-        case DIALOG_EMPREGOS:
-        {
-            PlayerEmprego[playerid] = listitem + 1;
-            SendClientMessage(playerid, -1, "Emprego assumido com sucesso!");
-        }
-
-        case DIALOG_GPS:
-        {
-            DisablePlayerCheckpoint(playerid);
-
-            switch(listitem)
-            {
-                case 0:
-                    SetPlayerCheckpoint(1555.0, -1675.0, 16.2, 5.0);
-                case 1:
-                    SetPlayerCheckpoint(-1987.0, 138.0, 27.6, 5.0);
-                case 2:
-                    SetPlayerCheckpoint(1377.0, 2329.0, 10.8, 5.0);
-            }
-
-            SendClientMessage(playerid, 0x00FF00FF, "GPS marcado no mapa.");
+            GivePlayerMoney(i, 1000);
+            SendClientMessage(i, 0x00FF00FF, "Salário recebido.");
         }
     }
+    return 1;
+}
+
+CMD:menu(playerid)
+{
+    if(!Logado[playerid]) return 1;
+    ShowPlayerDialog(playerid, DIALOG_MENU, DIALOG_STYLE_LIST,
+        "Menu",
+        "Prefeitura\nGPS",
+        "Selecionar", "Fechar");
     return 1;
 }
