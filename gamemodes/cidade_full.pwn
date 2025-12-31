@@ -60,21 +60,13 @@ public OnPlayerConnect(playerid)
 // =================================================
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
-    // Dialogs externos (menus, GPS, etc)
-    if (HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext))
-        return 1;
-
     new path[64];
     ContaPath(playerid, path, sizeof(path));
 
     // ================= LOGIN =================
     if (dialogid == DIALOG_LOGIN)
     {
-        if (!response)
-        {
-            Kick(playerid);
-            return 1;
-        }
+        if (!response) return Kick(playerid);
 
         new senha[32];
         dini_Get(path, "Senha", senha);
@@ -102,11 +94,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     // ================= REGISTRO =================
     if (dialogid == DIALOG_REGISTER)
     {
-        if (!response)
-        {
-            Kick(playerid);
-            return 1;
-        }
+        if (!response) return Kick(playerid);
 
         if (strlen(inputtext) < 3)
         {
@@ -133,7 +121,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         return 1;
     }
 
-    return 0;
+    // ================= OUTROS DIALOGS =================
+    return HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext);
 }
 
 // =================================================
