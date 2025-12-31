@@ -1,14 +1,25 @@
-8// ================= COMANDOS =================
+#include <a_samp>
+#include <zcmd>
+#include <dini>
+
+#pragma unused inputtext
+
+// ================= COMANDOS =================
 
 CMD:menu(playerid)
 {
     if (!Logado[playerid])
         return SendClientMessage(playerid, -1, "❌ Você precisa logar primeiro.");
 
-    ShowPlayerDialog(playerid, DIALOG_MENU_PRINCIPAL, DIALOG_STYLE_LIST,
+    ShowPlayerDialog(
+        playerid,
+        DIALOG_MENU_PRINCIPAL,
+        DIALOG_STYLE_LIST,
         "Menu Principal",
         "Prefeitura\nConcessionária\nAuto Escola\nGPS\nAjuda",
-        "Selecionar", "Fechar");
+        "Selecionar",
+        "Fechar"
+    );
     return 1;
 }
 
@@ -41,7 +52,7 @@ CMD:ajuda(playerid)
 
 // ================= DIALOG HANDLER =================
 
-HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext[])
+stock HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext[])
 {
     if (!response) return 1;
 
@@ -75,6 +86,8 @@ HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext[])
     return 0;
 }
 
+// ================= ADMIN =================
+
 CMD:setspawn(playerid, params[])
 {
     if (!IsPlayerAdmin(playerid))
@@ -94,4 +107,3 @@ CMD:setspawn(playerid, params[])
     SendClientMessage(playerid, -1, "✅ Spawn global definido com sucesso.");
     return 1;
 }
-
