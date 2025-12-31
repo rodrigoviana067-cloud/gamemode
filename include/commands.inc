@@ -5,6 +5,7 @@
 #pragma unused inputtext
 
 // ================= COMANDOS =================
+forward HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext[]);
 
 CMD:menu(playerid)
 {
@@ -52,9 +53,9 @@ CMD:ajuda(playerid)
 
 // ================= DIALOG HANDLER =================
 
-stock HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext[])
+HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext[])
 {
-    if (!response) return 1;
+    if (!response) return 0;
 
     switch (dialogid)
     {
