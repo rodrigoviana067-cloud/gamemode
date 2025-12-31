@@ -59,8 +59,7 @@ public OnPlayerConnect(playerid)
 // =================================================
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
-    // Primeiro: dialogs externos (menu, gps etc)
-    if (HandleDialogs_Commands(playerid, dialogid, response, listitem))
+    if (HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext))
         return 1;
 
     new path[64];
@@ -70,10 +69,13 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if (dialogid == DIALOG_LOGIN)
     {
         if (!response)
-            return Kick(playerid);
+        {
+            Kick(playerid);
+            return 1;
+        }
 
-        new senha[32];
-        dini_Get(path, "Senha", senha);
+        new senha[32] = "";
+        dini_Get(path, "Senha", senha, sizeof(senha));
 
         if (strcmp(inputtext, senha, false) != 0)
         {
@@ -84,6 +86,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
             return 1;
         }
 
+        // LOGIN OK
         Logado[playerid] = true;
         PlayerEmprego[playerid] = dini_Int(path, "Emprego");
 
@@ -99,7 +102,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if (dialogid == DIALOG_REGISTER)
     {
         if (!response)
-            return Kick(playerid);
+        {
+            Kick(playerid);
+            return 1;
+        }
 
         if (strlen(inputtext) < 3)
         {
@@ -137,6 +143,7 @@ public OnPlayerSpawn(playerid)
     new path[64];
     ContaPath(playerid, path, sizeof(path));
 
+    // Spawn global salvo por admin, ou padrão LSIA
     if (dini_Exists("spawn.ini"))
     {
         SetPlayerPos(
@@ -147,11 +154,21 @@ public OnPlayerSpawn(playerid)
         );
         SetPlayerFacingAngle(playerid, dini_Float("spawn.ini", "A"));
     }
+    else
+    {
+        // Ponto padrão no Aeroporto de Los Santos
+        SetPlayerPos(playerid, -1257.5, -2704.9, 56.7);
+        SetPlayerFacingAngle(playerid, 0.0);
+    }
 
+    // Skin salva na conta ou default
     if (dini_Exists(path))
         SetPlayerSkin(playerid, dini_Int(path, "Skin"));
+    else
+        SetPlayerSkin(playerid, 60);
 
     SetPlayerInterior(playerid, 0);
     SetPlayerVirtualWorld(playerid, 0);
+
     return 1;
 }
