@@ -3,6 +3,9 @@
 #endif
 #define _menus_included
 
+#include "player_data.inc"
+#include "cfg_constants.inc"
+
 // ================= DIALOG IDS =================
 #define DIALOG_MENU_PRINCIPAL  100
 #define DIALOG_PREFEITURA      110
@@ -22,7 +25,7 @@ stock AbrirMenuPrincipal(playerid)
 
 stock AbrirPrefeitura(playerid)
 {
-    if (PlayerEmprego[playerid] == EMPREGO_NENHUM)
+    if(PlayerEmprego[playerid] == EMPREGO_NENHUM)
     {
         ShowPlayerDialog(playerid, DIALOG_PREFEITURA, DIALOG_STYLE_LIST,
             "Prefeitura",
