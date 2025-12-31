@@ -161,13 +161,20 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 // =================================================
 public OnPlayerSpawn(playerid)
 {
-    new path[64];
-    ContaPath(playerid, path, sizeof(path));
+    new Float:X, Float:Y, Float:Z, Float:A;
 
-    new skin = 60;
-    if (dini_Exists(path))
-        skin = dini_Int(path, "Skin");
+    if (dini_Exists("spawn.ini"))
+    {
+        X = dini_Float("spawn.ini", "X");
+        Y = dini_Float("spawn.ini", "Y");
+        Z = dini_Float("spawn.ini", "Z");
+        A = dini_Float("spawn.ini", "A");
 
-    SetPlayerSkin(playerid, skin);
+        SetPlayerPos(playerid, X, Y, Z);
+        SetPlayerFacingAngle(playerid, A);
+    }
+
+    SetPlayerInterior(playerid, 0);
+    SetPlayerVirtualWorld(playerid, 0);
     return 1;
 }
