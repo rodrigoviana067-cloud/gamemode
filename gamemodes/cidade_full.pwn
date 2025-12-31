@@ -48,6 +48,10 @@ public OnPlayerConnect(playerid)
 
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
+    // dialogs dos comandos (/menu, /gps, etc)
+    if (HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext) == 1)
+        return 1;
+
     new path[64];
     ContaPath(playerid, path, sizeof(path));
 
@@ -59,7 +63,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         new senha[32];
         dini_Get(path, "Senha", senha);
 
-        if (strcmp(inputtext, senha, false) != 0)
+        if (strcmp(inputtext, senha, false) !== 0)
         {
             ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
                 "Login",
@@ -107,14 +111,4 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     }
 
     return 0;
-}
-
-public OnPlayerSpawn(playerid)
-{
-    SetPlayerPos(playerid, SPAWN_X, SPAWN_Y, SPAWN_Z);
-    SetPlayerFacingAngle(playerid, 0.0);
-    SetPlayerInterior(playerid, 0);
-    SetPlayerVirtualWorld(playerid, 0);
-    SetPlayerSkin(playerid, SPAWN_SKIN);
-    return 1;
 }
