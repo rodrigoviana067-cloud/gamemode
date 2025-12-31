@@ -70,11 +70,10 @@ public OnPlayerConnect(playerid)
 // =================================================
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
-    // ---------------------------------------------
-    // DIALOGS DOS COMANDOS (/menu, /gps, etc)
-    // ---------------------------------------------
-    new handled = HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext);
-    if (handled == 1)
+    // -----------------------------
+    // Dialogs externos (GPS, etc)
+    // -----------------------------
+    if (HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext))
         return 1;
 
     new path[64];
@@ -142,6 +141,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         dini_Create(path);
         dini_Set(path, "Senha", inputtext);
         dini_IntSet(path, "Emprego", EMPREGO_NENHUM);
+        dini_IntSet(path, "Skin", 60); // skin inicial correta
 
         Logado[playerid] = true;
         PlayerEmprego[playerid] = EMPREGO_NENHUM;
@@ -154,4 +154,20 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     }
 
     return 0;
+}
+
+// =================================================
+// PLAYER SPAWN (ESSENCIAL PRA SKIN)
+// =================================================
+public OnPlayerSpawn(playerid)
+{
+    new path[64];
+    ContaPath(playerid, path, sizeof(path));
+
+    new skin = 60;
+    if (dini_Exists(path))
+        skin = dini_Int(path, "Skin");
+
+    SetPlayerSkin(playerid, skin);
+    return 1;
 }
