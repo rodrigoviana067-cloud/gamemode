@@ -2,10 +2,10 @@
 #include <zcmd>
 #include <dini>
 
-#pragma unused inputtext
-
 // ================= COMANDOS =================
 forward HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext[]);
+
+// ================= COMANDOS =================
 
 CMD:menu(playerid)
 {
@@ -55,6 +55,8 @@ CMD:ajuda(playerid)
 
 HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext[])
 {
+    #pragma unused inputtext
+
     if (!response) return 0;
 
     switch (dialogid)
