@@ -2,6 +2,7 @@
 #include <zcmd>
 #include <dini>
 
+// Certifique-se de que esses arquivos existem na pasta 'pawno/include'
 #include "cfg_constants.inc"
 #include "player_data.inc"
 #include "menus.inc"
@@ -11,7 +12,6 @@
 // FUNÇÕES AUXILIARES
 // =================================================
 
-// Define o caminho do arquivo do jogador
 stock ContaPath(playerid, buffer[], len)
 {
     new name[MAX_PLAYER_NAME];
@@ -20,8 +20,9 @@ stock ContaPath(playerid, buffer[], len)
 }
 
 // =================================================
-// MAIN
+// MAIN & INIT
 // =================================================
+
 main()
 {
     print("---------------------------------------");
@@ -29,12 +30,10 @@ main()
     print("---------------------------------------");
 }
 
-// =================================================
-// GAMEMODE INIT
-// =================================================
 public OnGameModeInit()
 {
     SetGameModeText("Cidade RP Full");
+    
     // Criar arquivo de spawn padrão se não existir
     if(!dini_Exists("spawn.ini"))
     {
@@ -48,14 +47,15 @@ public OnGameModeInit()
 }
 
 // =================================================
-// PLAYER CONNECT & DISCONNECT
+// PLAYER CONNECT, DISCONNECT & TEXT
 // =================================================
+
 public OnPlayerConnect(playerid)
 {
     Logado[playerid] = false;
     PlayerEmprego[playerid] = EMPREGO_NENHUM;
 
-    TogglePlayerControllable(playerid, false);
+    TogglePlayerControllable(playerid, false); // Congela até logar
 
     new path[64];
     ContaPath(playerid, path, sizeof(path));
@@ -84,28 +84,37 @@ public OnPlayerDisconnect(playerid, reason)
         new path[64];
         ContaPath(playerid, path, sizeof(path));
         
-        // Salva os dados antes de sair
+        // Salva os dados cruciais
         dini_IntSet(path, "Emprego", PlayerEmprego[playerid]);
         dini_IntSet(path, "Skin", GetPlayerSkin(playerid));
-        
-        // Opcional: Salvar posição atual para voltar onde parou
-        /*
-        new Float:x, Float:y, Float:z;
-        GetPlayerPos(playerid, x, y, z);
-        dini_FloatSet(path, "PosX", x);
-        ... etc
-        */
+        dini_IntSet(path, "Dinheiro", GetPlayerMoney(playerid));
+        dini_IntSet(path, "Score", GetPlayerScore(playerid));
     }
     Logado[playerid] = false;
+    return 1;
+}
+
+// Impede o jogador de falar sem estar logado
+public OnPlayerText(playerid, text[])
+{
+    if(!Logado[playerid]) return 0;
+    return 1;
+}
+
+// Impede comandos sem estar logado (ZCMD)
+public OnPlayerCommandReceived(playerid, cmdtext[])
+{
+    if(!Logado[playerid]) return 0;
     return 1;
 }
 
 // =================================================
 // DIALOG RESPONSE
 // =================================================
+
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
-    // Primeiro tenta processar dialogs externos (menus.inc/commands.inc)
+    // Verifica se o diálogo pertence aos seus outros arquivos .inc
     if (HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext))
         return 1;
 
@@ -116,14 +125,14 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     {
         if (!response) return Kick(playerid);
 
-        new senha[32];
-        format(senha, sizeof(senha), "%s", dini_Get(path, "Senha"));
-
-        if (strcmp(inputtext, senha, false) == 0)
+        if (strcmp(inputtext, dini_Get(path, "Senha"), false) == 0)
         {
-            Logado[playerid] = true;
+            // CARREGA DADOS DO ARQUIVO
             PlayerEmprego[playerid] = dini_Int(path, "Emprego");
+            SetPlayerScore(playerid, dini_Int(path, "Score"));
+            GivePlayerMoney(playerid, dini_Int(path, "Dinheiro"));
             
+            Logado[playerid] = true;
             TogglePlayerControllable(playerid, true);
             SpawnPlayer(playerid);
             SendClientMessage(playerid, 0x00FF00FF, "✅ Login realizado com sucesso!");
@@ -140,10 +149,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     {
         if (!response) return Kick(playerid);
 
-        if (strlen(inputtext) < 3)
+        if (strlen(inputtext) < 4)
         {
             ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD,
-                "Registro", "{FF0000}Senha muito curta! {FFFFFF}Tire ao menos 3 caracteres:", "Registrar", "Sair");
+                "Registro", "{FF0000}Senha muito curta! {FFFFFF}Use ao menos 4 caracteres:", "Registrar", "Sair");
             return 1;
         }
 
@@ -151,6 +160,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         dini_Set(path, "Senha", inputtext);
         dini_IntSet(path, "Emprego", EMPREGO_NENHUM);
         dini_IntSet(path, "Skin", 60);
+        dini_IntSet(path, "Dinheiro", 500); // Dinheiro inicial
+        dini_IntSet(path, "Score", 1);    // Level inicial
 
         Logado[playerid] = true;
         PlayerEmprego[playerid] = EMPREGO_NENHUM;
@@ -166,9 +177,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 // =================================================
 // PLAYER SPAWN
 // =================================================
+
 public OnPlayerSpawn(playerid)
 {
-    // Proteção: Não deixa spawnar sem logar
     if (!Logado[playerid])
     {
         Kick(playerid);
@@ -184,15 +195,8 @@ public OnPlayerSpawn(playerid)
         SetPlayerPos(playerid, dini_Float("spawn.ini", "X"), dini_Float("spawn.ini", "Y"), dini_Float("spawn.ini", "Z"));
         SetPlayerFacingAngle(playerid, dini_Float("spawn.ini", "A"));
     }
-    else
-    {
-        SetPlayerPos(playerid, -1257.5, -2704.9, 56.7);
-        SetPlayerFacingAngle(playerid, 0.0);
-    }
 
-    // Aplicar Skin salva
     SetPlayerSkin(playerid, dini_Int(path, "Skin"));
-    
     SetPlayerInterior(playerid, 0);
     SetPlayerVirtualWorld(playerid, 0);
     return 1;
