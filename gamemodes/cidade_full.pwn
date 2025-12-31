@@ -21,7 +21,6 @@ main()
 public OnGameModeInit()
 {
     SetGameModeText("Cidade RP Full");
-    SetTimer("PagamentoSalario", 600000, true);
     return 1;
 }
 
@@ -56,14 +55,12 @@ public OnPlayerConnect(playerid)
 }
 
 // =================================================
-// DIALOG RESPONSE
+// DIALOG RESPONSE (ÚNICO)
 // =================================================
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
-    // -----------------------------
-    // Dialogs externos (GPS, Menu…)
-    // -----------------------------
-    if (HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext))
+    // Primeiro: dialogs externos (menu, gps etc)
+    if (HandleDialogs_Commands(playerid, dialogid, response, listitem))
         return 1;
 
     new path[64];
@@ -73,17 +70,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if (dialogid == DIALOG_LOGIN)
     {
         if (!response)
-        {
-            Kick(playerid);
-            return 1;
-        }
-
-        if (!dini_Exists(path))
-        {
-            SendClientMessage(playerid, -1, "❌ Conta não encontrada.");
-            Kick(playerid);
-            return 1;
-        }
+            return Kick(playerid);
 
         new senha[32];
         dini_Get(path, "Senha", senha);
@@ -93,12 +80,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
             ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD,
                 "Login",
                 "Senha incorreta, tente novamente:",
-                "Entrar",
-                "Sair");
+                "Entrar", "Sair");
             return 1;
         }
 
-        // LOGIN OK
         Logado[playerid] = true;
         PlayerEmprego[playerid] = dini_Int(path, "Emprego");
 
@@ -114,18 +99,14 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if (dialogid == DIALOG_REGISTER)
     {
         if (!response)
-        {
-            Kick(playerid);
-            return 1;
-        }
+            return Kick(playerid);
 
         if (strlen(inputtext) < 3)
         {
             ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD,
                 "Registro",
                 "Senha muito curta (mín. 3 caracteres):",
-                "Registrar",
-                "Sair");
+                "Registrar", "Sair");
             return 1;
         }
 
@@ -148,37 +129,27 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     return 0;
 }
 
-    // ================= OUTROS DIALOGS =================
-    return HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext);
-}
-
 // =================================================
-// PLAYER SPAWN (SEGURO)
+// PLAYER SPAWN
 // =================================================
 public OnPlayerSpawn(playerid)
 {
-    if (!Logado[playerid])
-        return 1;
-
-    new Float:X, Float:Y, Float:Z, Float:A;
     new path[64];
     ContaPath(playerid, path, sizeof(path));
 
     if (dini_Exists("spawn.ini"))
     {
-        X = dini_Float("spawn.ini", "X");
-        Y = dini_Float("spawn.ini", "Y");
-        Z = dini_Float("spawn.ini", "Z");
-        A = dini_Float("spawn.ini", "A");
-
-        SetPlayerPos(playerid, X, Y, Z);
-        SetPlayerFacingAngle(playerid, A);
+        SetPlayerPos(
+            playerid,
+            dini_Float("spawn.ini", "X"),
+            dini_Float("spawn.ini", "Y"),
+            dini_Float("spawn.ini", "Z")
+        );
+        SetPlayerFacingAngle(playerid, dini_Float("spawn.ini", "A"));
     }
 
     if (dini_Exists(path))
-    {
         SetPlayerSkin(playerid, dini_Int(path, "Skin"));
-    }
 
     SetPlayerInterior(playerid, 0);
     SetPlayerVirtualWorld(playerid, 0);
