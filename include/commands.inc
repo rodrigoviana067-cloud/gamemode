@@ -1,4 +1,4 @@
-// ================= COMANDOS =================
+8// ================= COMANDOS =================
 
 CMD:menu(playerid)
 {
@@ -77,10 +77,11 @@ HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext[])
 
 CMD:setspawn(playerid, params[])
 {
-    if (PlayerAdmin[playerid] < 1)
-        return SendClientMessage(playerid, -1, "❌ Apenas administradores.");
+    if (!IsPlayerAdmin(playerid))
+        return SendClientMessage(playerid, -1, "❌ Apenas administradores RCON.");
 
     new Float:X, Float:Y, Float:Z, Float:A;
+
     GetPlayerPos(playerid, X, Y, Z);
     GetPlayerFacingAngle(playerid, A);
 
@@ -93,3 +94,4 @@ CMD:setspawn(playerid, params[])
     SendClientMessage(playerid, -1, "✅ Spawn global definido com sucesso.");
     return 1;
 }
+
