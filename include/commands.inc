@@ -74,3 +74,22 @@ HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext[])
     }
     return 0;
 }
+
+CMD:setspawn(playerid, params[])
+{
+    if (PlayerAdmin[playerid] < 1)
+        return SendClientMessage(playerid, -1, "❌ Apenas administradores.");
+
+    new Float:X, Float:Y, Float:Z, Float:A;
+    GetPlayerPos(playerid, X, Y, Z);
+    GetPlayerFacingAngle(playerid, A);
+
+    dini_Create("spawn.ini");
+    dini_FloatSet("spawn.ini", "X", X);
+    dini_FloatSet("spawn.ini", "Y", Y);
+    dini_FloatSet("spawn.ini", "Z", Z);
+    dini_FloatSet("spawn.ini", "A", A);
+
+    SendClientMessage(playerid, -1, "✅ Spawn global definido com sucesso.");
+    return 1;
+}
