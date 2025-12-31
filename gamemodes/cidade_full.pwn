@@ -1,8 +1,3 @@
-main()
-{
-    print("Cidade RP Full carregada com sucesso");
-}
-
 #include <a_samp>
 #include <zcmd>
 #include <dini>
@@ -11,6 +6,11 @@ main()
 #include "player_data.inc"
 #include "menus.inc"
 #include "commands.inc"
+
+main()
+{
+    print("Cidade RP Full carregada com sucesso");
+}
 
 public OnGameModeInit()
 {
@@ -48,14 +48,14 @@ public OnPlayerConnect(playerid)
 
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
-    if (!response) return 1;
-
     new path[64];
     ContaPath(playerid, path, sizeof(path));
 
     // ================= LOGIN =================
     if (dialogid == DIALOG_LOGIN)
     {
+        if (!response) return Kick(playerid);
+
         new senha[32];
         dini_Get(path, "Senha", senha);
 
@@ -68,7 +68,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
             return 1;
         }
 
-        // ✅ LOGIN OK
         Logado[playerid] = true;
         PlayerEmprego[playerid] = dini_Int(path, "Emprego");
 
@@ -82,6 +81,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     // ================= REGISTRO =================
     if (dialogid == DIALOG_REGISTER)
     {
+        if (!response) return Kick(playerid);
+
         if (strlen(inputtext) < 3)
         {
             ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD,
@@ -105,10 +106,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         return 1;
     }
 
-    return 1;
+    return 0;
 }
 
-// ================= SPAWN =================
 public OnPlayerSpawn(playerid)
 {
     SetPlayerPos(playerid, SPAWN_X, SPAWN_Y, SPAWN_Z);
