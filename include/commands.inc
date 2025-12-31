@@ -4,12 +4,6 @@
 #define _commands_included
 
 // ================= FORWARDS =================
-forward zcmd_OnGameModeInit();
-public zcmd_OnGameModeInit()
-{
-    return 1;
-}
-
 forward OnPlayerConnect(playerid);
 forward OnPlayerDisconnect(playerid, reason);
 forward OnPlayerSpawn(playerid);
