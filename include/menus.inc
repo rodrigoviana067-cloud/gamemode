@@ -3,15 +3,9 @@
 #endif
 #define _menus_included
 
-#include "player_data.inc"
+#include <a_samp>
 #include "cfg_constants.inc"
-
-// ================= DIALOG IDS =================
-#define DIALOG_MENU_PRINCIPAL  100
-#define DIALOG_PREFEITURA      110
-#define DIALOG_EMPREGOS        111
-#define DIALOG_GPS             120
-#define DIALOG_AJUDA           130
+#include "player_data.inc"
 
 // ================= MENUS =================
 stock AbrirMenuPrincipal(playerid)
@@ -55,10 +49,7 @@ stock AbrirAjuda(playerid)
 {
     ShowPlayerDialog(playerid, DIALOG_AJUDA, DIALOG_STYLE_MSGBOX,
         "Ajuda",
-        "/menu - Menu principal\n\
-/gps - GPS da cidade\n\
-/prefeitura - Prefeitura\n\
-/ajuda - Este menu",
+        "/menu - Menu principal\n/gps - GPS\n/prefeitura - Prefeitura\n/ajuda - Ajuda",
         "Ok", "");
     return 1;
 }
