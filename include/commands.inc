@@ -1,16 +1,10 @@
 // include/commands.inc
-forward HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext[]);
-forward cmd_gps(playerid, params[]);
-
-public HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext[]) {
-    return 0;
-}
 
 CMD:gps(playerid, params[]) {
     if(!Logado[playerid]) return 1;
     
-    new lista;
-    lista = '\0'; 
+    new lista[256]; // ADICIONADO TAMANHO [256]
+    lista[0] = '\0'; 
     strcat(lista, "Los Santos (LS)\n");
     strcat(lista, "San Fierro (SF)\n");
     strcat(lista, "Las Venturas (LV)\n");
