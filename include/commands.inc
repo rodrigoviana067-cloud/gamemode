@@ -8,8 +8,8 @@ public HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext[
 CMD:gps(playerid, params[]) {
     if(!Logado[playerid]) return 1;
     
-    new lista[512]; // Definido tamanho da string
-    lista[0] = '\0'; // Limpa a string
+    new lista[200];
+    lista[0] = '\0'; 
     strcat(lista, "Los Santos (LS)\n");
     strcat(lista, "San Fierro (SF)\n");
     strcat(lista, "Las Venturas (LV)\n");
