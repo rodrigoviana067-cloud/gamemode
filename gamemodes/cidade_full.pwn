@@ -182,12 +182,3 @@ public OnPlayerEnterCheckpoint(playerid) {
     SendClientMessage(playerid, -1, "Você chegou ao seu destino!");
     return 1;
 }
-
-// Caso o comando /gps não esteja no seu commands.inc, ele está aqui:
-CMD:gps(playerid, params[]) {
-    if(!Logado[playerid]) return 1;
-    new lista[128];
-    format(lista, sizeof(lista), "Los Santos (LS)\nSan Fierro (SF)\nLas Venturas (LV)\n{FF0000}Desativar GPS");
-    ShowPlayerDialog(playerid, DIALOG_GPS_MENU, DIALOG_STYLE_LIST, "GPS", lista, "Selecionar", "Sair");
-    return 1;
-}
