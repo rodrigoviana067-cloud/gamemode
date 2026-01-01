@@ -1,16 +1,15 @@
 // include/commands.inc
 forward HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext[]);
-forward cmd_gps(playerid, params[]); // Forward necessário para ser chamado de volta
 
 public HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext[]) {
-    // Este arquivo só tem o GPS agora.
     return 0;
 }
 
 CMD:gps(playerid, params[]) {
     if(!Logado[playerid]) return 1;
     
-    new lista;
+    new lista[512]; // Definido tamanho da string
+    lista[0] = '\0'; // Limpa a string
     strcat(lista, "Los Santos (LS)\n");
     strcat(lista, "San Fierro (SF)\n");
     strcat(lista, "Las Venturas (LV)\n");
@@ -21,5 +20,3 @@ CMD:gps(playerid, params[]) {
     ShowPlayerDialog(playerid, DIALOG_GPS_MENU, DIALOG_STYLE_LIST, "{00CCFF}GPS da Cidade", lista, "Selecionar", "Fechar");
     return 1;
 }
-
-// Removido o CMD:banco daqui, pois agora usamos um pickup no mapa.
