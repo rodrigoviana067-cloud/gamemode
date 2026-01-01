@@ -1,4 +1,4 @@
-// commands.inc
+// commands.inc corrigido para 2026
 
 forward HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext[]);
 
@@ -14,11 +14,11 @@ public HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext[
         
         if(listitem == 0) { // Prefeitura
             SendClientMessage(playerid, -1, "Você selecionou a Prefeitura.");
-            // Aqui você pode adicionar um SetPlayerPos ou abrir outro menu
         }
         if(listitem == 1) { // GPS
-            // Chama o comando GPS automaticamente
-            return cmd_gps(playerid, ""); 
+            // Mudança aqui: usamos uma string vazia declarada para evitar o warning 239
+            new fparams[1]; 
+            return cmd_gps(playerid, fparams); 
         }
         return 1;
     }
@@ -29,6 +29,7 @@ CMD:gps(playerid, params[]) {
     if(!Logado[playerid]) return SendClientMessage(playerid, -1, "{FF0000}Erro: {FFFFFF}Você não está logado.");
     
     new lista[150];
+    lista[0] = 0; // Limpa a string antes de usar o strcat
     strcat(lista, "Los Santos (LS)\n");
     strcat(lista, "San Fierro (SF)\n");
     strcat(lista, "Las Venturas (LV)\n");
