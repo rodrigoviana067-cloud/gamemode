@@ -78,31 +78,53 @@ public OnPlayerPickUpPickup(playerid, pickupid) {
     }
     return 1;
 }
+// ... (mantenha os defines e variáveis do topo)
 
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]) {
     if (HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext)) return 1;
 
+    // Lógica de Registro
     if(dialogid == DIALOG_REGISTER) {
         if(!response) return Kick(playerid);
         dini_Create(ContaPath(playerid));
         dini_Set(ContaPath(playerid), "Senha", inputtext);
         dini_IntSet(ContaPath(playerid), "DinheiroBanco", 0);
         Logado[playerid] = true;
-        GivePlayerMoney(playerid, 500); // Dinheiro inicial no bolso
+        GivePlayerMoney(playerid, 500); 
         SpawnPlayer(playerid);
         return 1;
     }
 
+    // Lógica de Login (CORRIGIDO: dini_Get precisa de destino)
     if(dialogid == DIALOG_LOGIN) {
         if(!response) return Kick(playerid);
-        if(strcmp(inputtext, dini_Get(ContaPath(playerid), "Senha")) == 0) {
+        
+        new senha_armazenada[64];
+        format(senha_armazenada, sizeof(senha_armazenada), dini_Get(ContaPath(playerid), "Senha"));
+
+        if(strcmp(inputtext, senha_armazenada) == 0) {
             PlayerMoney[playerid] = dini_Int(ContaPath(playerid), "DinheiroBanco");
             Logado[playerid] = true;
-            GivePlayerMoney(playerid, 500); // Dinheiro inicial no bolso
+            GivePlayerMoney(playerid, 500);
             SpawnPlayer(playerid);
-        } else MostrarLogin(playerid);
+        } else {
+            MostrarLogin(playerid);
+        }
         return 1;
     }
+    
+    // ... (mantenha o restante do código do GPS, ele está correto)
+    return 0;
+}
+
+// CORREÇÃO DO WARNING: PlayerEmprego sendo usado
+public OnPlayerDisconnect(playerid, reason) {
+    if(Logado[playerid]) {
+        dini_IntSet(ContaPath(playerid), "DinheiroBanco", PlayerMoney[playerid]);
+        dini_IntSet(ContaPath(playerid), "Emprego", PlayerEmprego[playerid]); // Agora está sendo usado
+    }
+    return 1;
+}
 
     if(dialogid == DIALOG_BANK_MENU && response) {
         if(listitem == 0) ShowPlayerDialog(playerid, DIALOG_BANK_SACAR, DIALOG_STYLE_INPUT, "Sacar", "Quantia:", "Sacar", "Voltar");
