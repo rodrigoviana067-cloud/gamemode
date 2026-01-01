@@ -86,6 +86,11 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]) {
         dini_Set(path, "Senha", inputtext);
         dini_IntSet(path, "Emprego", EMPREGO_NENHUM);
         
+        // Coordenadas iniciais para novos jogadores (Prefeitura/Spawn)
+        dini_FloatSet(path, "Pos_X", 1958.3783);
+        dini_FloatSet(path, "Pos_Y", 1343.1572);
+        dini_FloatSet(path, "Pos_Z", 15.3746);
+        
         Logado[playerid] = true;
         SendClientMessage(playerid, -1, "Conta criada com sucesso! Bem-vindo.");
         SpawnPlayer(playerid);
@@ -113,7 +118,14 @@ public OnPlayerDisconnect(playerid, reason) {
     if(Logado[playerid] == true) {
         new path[64];
         ContaPath(playerid, path, sizeof(path));
+        
+        new Float:x, Float:y, Float:z;
+        GetPlayerPos(playerid, x, y, z); // Pega a posição atual antes de sair
+        
         dini_IntSet(path, "Emprego", PlayerEmprego[playerid]);
+        dini_FloatSet(path, "Pos_X", x);
+        dini_FloatSet(path, "Pos_Y", y);
+        dini_FloatSet(path, "Pos_Z", z);
     }
     Logado[playerid] = false;
     return 1;
@@ -121,9 +133,25 @@ public OnPlayerDisconnect(playerid, reason) {
 
 public OnPlayerSpawn(playerid) {
     if(!Logado[playerid]) {
-        Kick(playerid); // Segurança: Não permite spawn sem logar
+        Kick(playerid); 
         return 0;
     }
+    
+    new path[64];
+    ContaPath(playerid, path, sizeof(path));
+    
+    // Carrega a posição do arquivo se ela existir
+    if(dini_Exists(path)) {
+        new Float:x, Float:y, Float:z;
+        x = dini_Float(path, "Pos_X");
+        y = dini_Float(path, "Pos_Y");
+        z = dini_Float(path, "Pos_Z");
+        
+        if(x != 0.0) { // Evita spawnar no 0,0,0 caso o arquivo esteja bugado
+            SetPlayerPos(playerid, x, y, z);
+        }
+    }
+
     SetPlayerInterior(playerid, 0);
     SetPlayerVirtualWorld(playerid, 0);
     return 1;
