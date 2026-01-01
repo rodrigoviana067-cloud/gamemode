@@ -55,37 +55,58 @@ public MostrarLogin(playerid) {
     }
 }
 
-public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]) {
-    if (HandleDialogs_Commands(playerid, dialogid, response, listitem, inputtext)) return 1;
-
-    if(dialogid == DIALOG_REGISTER) {
-        if(!response) return Kick(playerid);
-        if(strlen(inputtext) < 4) return MostrarLogin(playerid);
-        
-        dini_Create(GetConta(playerid));
-        dini_Set(GetConta(playerid), "Senha", inputtext);
-        dini_IntSet(GetConta(playerid), "DinheiroBanco", 0);
-        dini_IntSet(GetConta(playerid), "Emprego", 0);
-        
-        Logado[playerid] = true;
-        SpawnPlayer(playerid);
+    // --- SISTEMA DE GPS COMPLETO ---
+    if(dialogid == DIALOG_GPS_MENU && response) {
+        switch(listitem) {
+            case 0: ShowPlayerDialog(playerid, DIALOG_GPS_LS, DIALOG_STYLE_LIST, "GPS - Los Santos", "Prefeitura\nBanco Central\nDP\nHospital\nAeroporto", "Marcar", "Voltar");
+            case 1: ShowPlayerDialog(playerid, DIALOG_GPS_SF, DIALOG_STYLE_LIST, "GPS - San Fierro", "Banco SF\nDP SF\nHospital SF\nAeroporto SF", "Marcar", "Voltar");
+            case 2: ShowPlayerDialog(playerid, DIALOG_GPS_LV, DIALOG_STYLE_LIST, "GPS - Las Venturas", "Banco LV\nCassino\nDP LV\nAeroporto LV", "Marcar", "Voltar");
+            case 3: ShowPlayerDialog(playerid, DIALOG_GPS_EMPREGOS, DIALOG_STYLE_LIST, "GPS - Empregos", "Caminhoneiro\nTaxista\nPizza\nLixeiro", "Marcar", "Voltar");
+            case 4: ShowPlayerDialog(playerid, DIALOG_GPS_LOJAS, DIALOG_STYLE_LIST, "GPS - Lojas", "Concessionaria\nAmmu-Nation\n24/7\nMecanica", "Marcar", "Voltar");
+            case 5: { DisablePlayerCheckpoint(playerid); SendClientMessage(playerid, -1, "GPS Desativado."); }
+        }
         return 1;
     }
 
-    if(dialogid == DIALOG_LOGIN) {
-        if(!response) return Kick(playerid);
+    // Processamento dos Sub-Menus (Marcação do Ponto Vermelho)
+    if(dialogid >= 501 && dialogid <= 505) {
+        if(!response) { new t[1]; return cmd_gps(playerid, t); } // Botão Voltar
+        DisablePlayerCheckpoint(playerid);
         
-        new senha_ini[64];
-        format(senha_ini, sizeof(senha_ini), dini_Get(GetConta(playerid), "Senha"));
-
-        if(!strcmp(inputtext, senha_ini)) {
-            PlayerMoney[playerid] = dini_Int(GetConta(playerid), "DinheiroBanco");
-            PlayerEmprego[playerid] = dini_Int(GetConta(playerid), "Emprego");
-            Logado[playerid] = true;
-            SpawnPlayer(playerid);
-        } else {
-            ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "Erro", "Senha incorreta!", "Entrar", "Sair");
+        switch(dialogid) {
+            case DIALOG_GPS_LS: {
+                if(listitem == 0) SetPlayerCheckpoint(playerid, 1481.0, -1741.0, 13.5, 4.0);
+                else if(listitem == 1) SetPlayerCheckpoint(playerid, 1467.0, -1010.0, 26.0, 4.0);
+                else if(listitem == 2) SetPlayerCheckpoint(playerid, 1543.0, -1675.0, 13.5, 4.0);
+                else if(listitem == 3) SetPlayerCheckpoint(playerid, 1172.0, -1323.0, 14.0, 4.0);
+                else if(listitem == 4) SetPlayerCheckpoint(playerid, 1958.0, -2173.0, 13.5, 4.0);
+            }
+            case DIALOG_GPS_SF: {
+                if(listitem == 0) SetPlayerCheckpoint(playerid, -2416.0, 508.0, 35.0, 4.0);
+                else if(listitem == 1) SetPlayerCheckpoint(playerid, -1605.0, 711.0, 13.0, 4.0);
+                else if(listitem == 2) SetPlayerCheckpoint(playerid, -2646.0, 630.0, 14.0, 4.0);
+                else if(listitem == 3) SetPlayerCheckpoint(playerid, -1420.0, -287.0, 14.0, 4.0);
+            }
+            case DIALOG_GPS_LV: {
+                if(listitem == 0) SetPlayerCheckpoint(playerid, 2372.0, 2311.0, 10.0, 4.0);
+                else if(listitem == 1) SetPlayerCheckpoint(playerid, 2191.0, 1677.0, 12.0, 4.0);
+                else if(listitem == 2) SetPlayerCheckpoint(playerid, 2290.0, 2431.0, 10.0, 4.0);
+                else if(listitem == 3) SetPlayerCheckpoint(playerid, 1585.0, 1445.0, 10.0, 4.0);
+            }
+            case DIALOG_GPS_EMPREGOS: {
+                if(listitem == 0) SetPlayerCheckpoint(playerid, 2458.0, -2121.0, 13.5, 4.0);
+                else if(listitem == 1) SetPlayerCheckpoint(playerid, 1782.0, -1153.0, 23.0, 4.0);
+                else if(listitem == 2) SetPlayerCheckpoint(playerid, 2105.0, -1806.0, 13.5, 4.0);
+                else if(listitem == 3) SetPlayerCheckpoint(playerid, 2185.0, -1974.0, 13.5, 4.0);
+            }
+            case DIALOG_GPS_LOJAS: {
+                if(listitem == 0) SetPlayerCheckpoint(playerid, 2131.0, -1150.0, 24.0, 4.0);
+                else if(listitem == 1) SetPlayerCheckpoint(playerid, 1368.0, -1279.0, 13.5, 4.0);
+                else if(listitem == 2) SetPlayerCheckpoint(playerid, 1315.0, -897.0, 39.5, 4.0);
+                else if(listitem == 3) SetPlayerCheckpoint(playerid, 2439.0, -1471.0, 24.0, 4.0);
+            }
         }
+        SendClientMessage(playerid, -1, "{FFFF00}GPS: {FFFFFF}Local marcado! Siga o ponto vermelho no radar.");
         return 1;
     }
 
