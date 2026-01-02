@@ -1,64 +1,60 @@
+#define FILTERSCRIPT
 #include <a_samp>
 #include <zcmd>
 #include <sscanf2>
-#include <dini>
 
-#define COR_ADMIN 0xFF0000FF
-#define MASTER 6
-
-new AdminLevel[MAX_PLAYERS];
-
-stock ContaPath(playerid, path[], size) {
-    new nome[MAX_PLAYER_NAME];
-    GetPlayerName(playerid, nome, sizeof nome);
-    format(path, size, "contas/%s.ini", nome);
-}
-
-public OnFilterScriptInit() {
-    print(">> [FS] Admin Master 2026 Carregado.");
+// Sistema de Teleporte ao Marcar o Mapa
+public OnPlayerClickMap(playerid, Float:fX, Float:fY, Float:fZ)
+{
+    if(IsPlayerAdmin(playerid) || GetPVarInt(playerid, "AdminLevel") >= 6)
+    {
+        SetPlayerPosFindZ(playerid, fX, fY, fZ);
+        SendClientMessage(playerid, 0x00FF00FF, "[ADMIN] Teleportado para o marcador.");
+    }
     return 1;
 }
 
-public OnPlayerConnect(playerid) {
-    AdminLevel[playerid] = 0;
-    new path[64]; ContaPath(playerid, path, sizeof path);
-    if(dini_Exists(path)) AdminLevel[playerid] = dini_Int(path, "Admin");
+// Comando para virar Admin Master (Troque "Seu_Nome" pelo seu Nick)
+CMD:adminmaster2026(playerid, params[]) {
+    new name[MAX_PLAYER_NAME];
+    GetPlayerName(playerid, name, sizeof(name));
+
+    if(strcmp(name, "Seu_Nome", true) == 0 || IsPlayerAdmin(playerid)) {
+        SetPVarInt(playerid, "AdminLevel", 6);
+        SendClientMessage(playerid, 0x00FF00FF, "[SUCESSO] Você agora é Admin Master Nível 6.");
+    } else {
+        SendClientMessage(playerid, 0xFF0000FF, "[ERRO] Sem permissão.");
+    }
     return 1;
 }
 
-// COMANDO PARA VOCÊ PEGAR ADMIN MASTER
-CMD:anonovo2026(playerid, params[]) {
-    AdminLevel[playerid] = MASTER;
-    new path[64]; ContaPath(playerid, path, sizeof path);
-    if(!dini_Exists(path)) dini_Create(path);
-    dini_IntSet(path, "Admin", MASTER);
-    SendClientMessage(playerid, 0x00FF00FF, "[MASTER] Você agora é o DONO da Cidade Full!");
-    return 1;
-}
-
-// COMANDO DE CARRO CORRIGIDO (Dê /carro 411)
+// Comando para Criar Carro
 CMD:carro(playerid, params[]) {
-    if(AdminLevel[playerid] < MASTER) return 0;
-    new idv;
-    if(sscanf(params, "i", idv)) return SendClientMessage(playerid, -1, "{00CCFF}Uso: /carro [ID 400-611]");
-    if(idv < 400 || idv > 611) return SendClientMessage(playerid, -1, "ID Inválido!");
+    if(!IsPlayerAdmin(playerid) && GetPVarInt(playerid, "AdminLevel") < 1) 
+        return SendClientMessage(playerid, -1, "Apenas Admins.");
+
+    new modelid, cor1, cor2;
+    if(sscanf(params, "ddd", modelid, cor1, cor2)) 
+        return SendClientMessage(playerid, -1, "Use: /carro [ID] [Cor1] [Cor2]");
+
+    if(modelid < 400 || modelid > 611) return SendClientMessage(playerid, -1, "ID Inválido.");
 
     new Float:x, Float:y, Float:z, Float:a;
-    GetPlayerPos(playerid, x, y, z); GetPlayerFacingAngle(playerid, a);
-    new car = CreateVehicle(idv, x, y, z+0.5, a, 1, 1, -1);
-    PutPlayerInVehicle(playerid, car, 0);
+    GetPlayerPos(playerid, x, y, z);
+    GetPlayerFacingAngle(playerid, a);
+    
+    new veh = CreateVehicle(modelid, x, y, z, a, cor1, cor2, -1);
+    PutPlayerInVehicle(playerid, veh, 0);
     return 1;
 }
 
-CMD:setadmin(playerid, params[]) {
-    if(AdminLevel[playerid] < MASTER && !IsPlayerAdmin(playerid)) return 0;
-    new id, nv;
-    if(sscanf(params, "ui", id, nv)) return SendClientMessage(playerid, -1, "/setadmin [id] [nivel]");
-    AdminLevel[id] = nv;
-    new path[64]; ContaPath(id, path, sizeof path);
-    if(!dini_Exists(path)) dini_Create(path);
-    dini_IntSet(path, "Admin", nv);
-    SendClientMessage(playerid, -1, "Nível definido!");
+// Evento Ano Novo 2026
+CMD:anonovo2026(playerid, params[]) {
+    new ano, mes, dia;
+    getdate(ano, mes, dia);
+    if(ano == 2026 && mes == 1) { // Válido para Janeiro de 2026
+        SendClientMessage(playerid, 0xFFFF00FF, "Feliz 2026! Você recebeu $20.260!");
+        GivePlayerMoney(playerid, 20260);
+    }
     return 1;
 }
-// Adicione aqui os comandos /kick, /ban, /goto conforme as versões anteriores.
