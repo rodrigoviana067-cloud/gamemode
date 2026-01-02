@@ -14,11 +14,12 @@ public OnPlayerClickMap(playerid, Float:fX, Float:fY, Float:fZ)
     return 1;
 }
 
-// Comando para virar Admin Master (Troque "Seu_Nome" pelo seu Nick)
+// Comando para virar Admin Master
 CMD:adminmaster2026(playerid, params[]) {
     new name[MAX_PLAYER_NAME];
     GetPlayerName(playerid, name, sizeof(name));
 
+    // COLOQUE SEU NOME AQUI
     if(strcmp(name, "Seu_Nome", true) == 0 || IsPlayerAdmin(playerid)) {
         SetPVarInt(playerid, "AdminLevel", 6);
         SendClientMessage(playerid, 0x00FF00FF, "[SUCESSO] Você agora é Admin Master Nível 6.");
@@ -45,6 +46,7 @@ CMD:carro(playerid, params[]) {
     
     new veh = CreateVehicle(modelid, x, y, z, a, cor1, cor2, -1);
     PutPlayerInVehicle(playerid, veh, 0);
+    SendClientMessage(playerid, 0xFFFF00FF, "Veículo criado!");
     return 1;
 }
 
@@ -52,9 +54,11 @@ CMD:carro(playerid, params[]) {
 CMD:anonovo2026(playerid, params[]) {
     new ano, mes, dia;
     getdate(ano, mes, dia);
-    if(ano == 2026 && mes == 1) { // Válido para Janeiro de 2026
+    if(ano == 2026 && mes == 1) { 
         SendClientMessage(playerid, 0xFFFF00FF, "Feliz 2026! Você recebeu $20.260!");
         GivePlayerMoney(playerid, 20260);
+    } else {
+        SendClientMessage(playerid, -1, "O evento de Ano Novo já passou.");
     }
     return 1;
 }
