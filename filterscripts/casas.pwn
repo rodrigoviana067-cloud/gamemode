@@ -93,11 +93,13 @@ CMD:enterhouse(playerid, params[]) {
 
 CMD:exithouse(playerid, params[]) {
     for(new i = 0; i < MAX_HOUSES; i++) {
+        // Corrigido: Usando 'i' em vez de 'id'
         if(IsPlayerInRangeOfPoint(playerid, 3.0, House[i][hIntX], House[i][hIntY], House[i][hIntZ])) {
             SetPlayerInterior(playerid, 0);
-            SetPlayerPos(playerid, House[i][hX], House[id][hY], House[id][hZ]);
+            SetPlayerPos(playerid, House[i][hX], House[i][hY], House[i][hZ]);
             return 1;
         }
     }
     return 1;
 }
+
