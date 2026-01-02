@@ -27,7 +27,7 @@ public OnPlayerCommandText(playerid, cmdtext[]) {
     // Bloqueio de seguranca
     if(GetPVarInt(playerid, "AdminLevel") < NIVEL_MASTER && !IsPlayerAdmin(playerid)) return 0;
 
-    // Comando de Carro Corrigido
+    // Comando de Carro
     if(!strfind(cmdtext, "/carro", true)) {
         new veiculoID, corA, corB;
         if(sscanf_fix(cmdtext, veiculoID, corA, corB)) {
@@ -41,14 +41,14 @@ public OnPlayerCommandText(playerid, cmdtext[]) {
         GetPlayerPos(playerid, posX, posY, posZ); 
         GetPlayerFacingAngle(playerid, posA);
 
-        // Criamos o carro no ar (Z + 2.5) para resetar fisica
+        // Criamos o carro no ar para resetar fisica
         new id_veiculo = CreateVehicle(veiculoID, posX, posY, posZ + 2.5, posA, corA, corB, -1);
         
         // Zera velocidade para nao nascer puxando pro lado
         SetVehicleVelocity(id_veiculo, 0.0, 0.0, 0.0);
         
         SetVehicleVirtualWorld(id_veiculo, GetPlayerVirtualWorld(playerid));
-        SetVehicleInterior(id_veiculo, GetPlayerInterior(playerid));
+        LinkVehicleToInterior(id_veiculo, GetPlayerInterior(playerid)); // CORRIGIDO AQUI
         PutPlayerInVehicle(playerid, id_veiculo, 0);
         
         SendClientMessage(playerid, 0x00FF00FF, "Veiculo criado com fisica resetada!");
@@ -58,7 +58,7 @@ public OnPlayerCommandText(playerid, cmdtext[]) {
     // Comando Criar Casa
     if(!strfind(cmdtext, "/criarcasa", true)) {
         new id_c;
-        id_c = strval(cmdtext[11]); 
+        id_c = strval(cmdtext[11]); // Pega o valor apos '/criarcasa '
         if(id_c <= 0) return SendClientMessage(playerid, -1, "Use: /criarcasa [ID]");
         
         new string_c[32];
@@ -66,7 +66,6 @@ public OnPlayerCommandText(playerid, cmdtext[]) {
         OnPlayerCommandText(playerid, string_c); 
         return 1;
     }
-
     return 0;
 }
 
