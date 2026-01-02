@@ -1,16 +1,31 @@
-// Adicione isso no OnFilterScriptInit para evitar erros de pasta faltando
-public OnFilterScriptInit() {
-    print(">> FS Casas 2026: Carregado.");
-    // Tenta criar a pasta se não existir (apenas para Windows/alguns plugins)
-    // No Linux, você deve criar a pasta 'houses' dentro de 'scriptfiles' manualmente.
-    
-    for(new i = 0; i < MAX_HOUSES; i++) {
-        LoadHouse(i);
-    }
-    return 1;
+#define FILTERSCRIPT
+#include <a_samp>
+#include <zcmd>
+#include <sscanf2>
+#include <streamer>
+#include <dini>
+
+#define MAX_HOUSES      500
+#define HOUSE_PRICE     50000
+
+enum hInfo {
+    Float:hX, Float:hY, Float:hZ,
+    Float:hIntX, Float:hIntY, Float:hIntZ,
+    hInterior,
+    hOwner[MAX_PLAYER_NAME],
+    hLocked,
+    Text3D:hLabel,
+    hPickup
+};
+
+new House[MAX_HOUSES][hInfo];
+
+// --- Caminho dos arquivos ---
+stock HouseFile(id, string[], size) {
+    format(string, size, "houses/house_%d.ini", id);
 }
 
-// Remova o 'forward' e defina a função assim:
+// --- Funções de Carregar ---
 stock LoadHouse(id) {
     new file[64]; 
     HouseFile(id, file, sizeof file);
@@ -23,32 +38,36 @@ stock LoadHouse(id) {
     House[id][hIntY] = dini_Float(file, "IY");
     House[id][hIntZ] = dini_Float(file, "IZ");
     House[id][hInterior] = dini_Int(file, "Interior");
-    
-    // Correção no dini_Get (armazenar string corretamente)
-    valstr(House[id][hOwner], 0); // Limpa
     format(House[id][hOwner], MAX_PLAYER_NAME, "%s", dini_Get(file, "Owner"));
-    
     House[id][hLocked] = dini_Int(file, "Locked");
 
-    // Limpeza de objetos antigos antes de recriar
-    if(House[id][hLabel] != Text3D:0) {
-        DestroyDynamic3DTextLabel(House[id][hLabel]);
-        House[id][hLabel] = Text3D:0;
-    }
-    if(House[id][hPickup] != 0) {
-        DestroyDynamicPickup(House[id][hPickup]);
-        House[id][hPickup] = 0;
-    }
+    if(House[id][hLabel] != Text3D:0) DestroyDynamic3DTextLabel(House[id][hLabel]);
+    if(House[id][hPickup] != 0) DestroyDynamicPickup(House[id][hPickup]);
 
-    new str[150];
+    new str[128];
     if(!strcmp(House[id][hOwner], "Ninguem", true)) {
-        format(str, sizeof str, "{00FF00}Casa à Venda\n{FFFFFF}ID: %d\nPreço: {00FF00}$%d\n{FFFFFF}/buyhouse", id, HOUSE_PRICE);
+        format(str, sizeof str, "{00FF00}Casa à Venda\n{FFFFFF}Preço: {00FF00}$%d\n{FFFFFF}/buyhouse", HOUSE_PRICE);
         House[id][hPickup] = CreateDynamicPickup(1273, 1, House[id][hX], House[id][hY], House[id][hZ]);
-        House[id][hLabel] = CreateDynamic3DTextLabel(str, -1, House[id][hX], House[id][hY], House[id][hZ] + 0.8, 15.0);
+        House[id][hLabel] = CreateDynamic3DTextLabel(str, -1, House[id][hX], House[id][hY], House[id][hZ] + 0.8, 10.0);
     } else {
         format(str, sizeof str, "{00CCFF}Casa de: {FFFFFF}%s\n{00CCFF}Status: %s\n{FFFFFF}/enterhouse", House[id][hOwner], (House[id][hLocked] ? "{FF0000}Trancada" : "{00FF00}Aberta"));
         House[id][hPickup] = CreateDynamicPickup(1272, 1, House[id][hX], House[id][hY], House[id][hZ]);
-        House[id][hLabel] = CreateDynamic3DTextLabel(str, -1, House[id][hX], House[id][hY], House[id][hZ] + 0.8, 15.0);
+        House[id][hLabel] = CreateDynamic3DTextLabel(str, -1, House[id][hX], House[id][hY], House[id][hZ] + 0.8, 10.0);
     }
     return 1;
 }
+
+stock SaveHouse(id) {
+    new file[64]; HouseFile(id, file, sizeof file);
+    if(!dini_Exists(file)) dini_Create(file);
+    dini_FloatSet(file, "X", House[id][hX]); dini_FloatSet(file, "Y", House[id][hY]); dini_FloatSet(file, "Z", House[id][hZ]);
+    dini_FloatSet(file, "IX", House[id][hIntX]); dini_FloatSet(file, "IY", House[id][hIntY]); dini_FloatSet(file, "IZ", House[id][hIntZ]);
+    dini_IntSet(file, "Interior", House[id][hInterior]); dini_Set(file, "Owner", House[id][hOwner]); dini_IntSet(file, "Locked", House[id][hLocked]);
+}
+
+public OnFilterScriptInit() {
+    print(">> FS Casas 2026: Carregado.");
+    for(new i = 0; i < MAX_HOUSES; i++) LoadHouse(i);
+    return 1;
+}
+// ... Restante dos comandos (CMD:sethouse, etc)
