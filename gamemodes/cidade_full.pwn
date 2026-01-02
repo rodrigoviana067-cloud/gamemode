@@ -1,11 +1,18 @@
 /* 
-    CIDADE FULL 2026 - VERSÃO MASTER
-    Sistemas: Login/Registro, GPS, Eco-Bike e Salvamento.
+    CIDADE FULL 2026 - VERSÃO ESTÁVEL
+    Correção: Spawn na calçada e física da bike elétrica.
 */
 
 #include <a_samp>
 #include <zcmd>
 #include <dini>
+
+main() 
+{ 
+    print("---------------------------------------");
+    print("   CIDADE FULL 2026 - ONLINE           ");
+    print("---------------------------------------");
+}
 
 #define DIALOG_LOGIN        1
 #define DIALOG_REGISTER     2
@@ -34,13 +41,12 @@ public MostrarLogin(playerid) {
 }
 
 public OnGameModeInit() {
-    SetGameModeText("Cidade Full v4.0");
+    SetGameModeText("Cidade Full v4.2");
     
-    // Pickup exatamente onde o jogador spawna (Saída do Aeroporto)
-    PickupBike = CreatePickup(1239, 1, 1642.17, -2256.39, 13.49, -1);
-    Create3DTextLabel("{00CCFF}BIKE ELÉTRICA\n{FFFFFF}Aceleração Automática", 0xFFFFFFFF, 1642.17, -2256.39, 14.0, 10.0, 0, 0);
+    // Pickup na Calçada (Afastado do spawn para não bugar)
+    PickupBike = CreatePickup(1239, 1, 1642.50, -2244.60, 13.50, -1);
+    Create3DTextLabel("{00CCFF}ECO-BIKE\n{FFFFFF}Pise para pegar", 0xFFFFFFFF, 1642.50, -2244.60, 14.0, 10.0, 0, 0);
     
-    // Adiciona classe para evitar bug de spawn
     AddPlayerClass(SKIN_NOVATO, 1642.17, -2256.39, 13.49, 178.0, 0, 0, 0, 0, 0, 0);
     return 1;
 }
@@ -52,40 +58,40 @@ public OnPlayerConnect(playerid) {
     return 1;
 }
 
-public OnPlayerDisconnect(playerid, reason) {
-    if(Logado[playerid]) {
-        new path[64]; format(path, sizeof(path), GetConta(playerid));
-        dini_IntSet(path, "Grana", GetPlayerMoney(playerid)); // Salva o dinheiro ao sair
-    }
-    if(BikeNovato[playerid] != -1) DestroyVehicle(BikeNovato[playerid]);
-    return 1;
-}
-
 public OnPlayerSpawn(playerid) {
     if(!Logado[playerid]) return Kick(playerid);
-    SetPlayerInterior(playerid, 0);
-    SetPlayerVirtualWorld(playerid, 0);
+    
+    // Spawn na calçada (longe da via de carros)
+    SetPlayerPos(playerid, 1645.50, -2250.20, 13.50);
+    SetPlayerFacingAngle(playerid, 180.0);
+    SetCameraBehindPlayer(playerid);
     return 1;
 }
 
-// --- LOGICA DA BIKE ELÉTRICA ---
+// --- LOGICA DA BIKE COM FIX DE MOVIMENTO ---
 public OnPlayerPickUpPickup(playerid, pickupid) {
     if(pickupid == PickupBike) {
         if(IsPlayerInAnyVehicle(playerid)) return 1;
-        
         if(BikeNovato[playerid] != -1) DestroyVehicle(BikeNovato[playerid]);
         
         new Float:x, Float:y, Float:z, Float:a;
         GetPlayerPos(playerid, x, y, z);
         GetPlayerFacingAngle(playerid, a);
         
-        // Criar a bike levemente acima do chão (z + 0.5) para não bugar
-        BikeNovato[playerid] = CreateVehicle(510, x, y, z + 0.5, a, 1, 1, -1);
-        PutPlayerInVehicle(playerid, BikeNovato[playerid], 0);
+        // Criar a bike a 0.8 de altura (evita prender no chão)
+        BikeNovato[playerid] = CreateVehicle(510, x, y, z + 0.8, a, 1, 1, -1);
         
-        SendClientMessage(playerid, 0x00CCFFFF, "[ECO] Bike Elétrica ativada! Apenas segure o acelerador.");
+        // Timer de 200ms para colocar o player (estabiliza a bike antes de montar)
+        SetTimerEx("MontarNaBike", 200, false, "ii", playerid, BikeNovato[playerid]);
+        
+        SendClientMessage(playerid, 0x00CCFFFF, "[ECO] Bike ativada! Apenas segure o acelerador.");
     }
     return 1;
+}
+
+forward MontarNaBike(playerid, vehicleid);
+public MontarNaBike(playerid, vehicleid) {
+    PutPlayerInVehicle(playerid, vehicleid, 0);
 }
 
 public OnPlayerUpdate(playerid) {
@@ -93,15 +99,16 @@ public OnPlayerUpdate(playerid) {
         new keys, ud, lr;
         GetPlayerKeys(playerid, keys, ud, lr);
         
-        if(ud == KEY_UP) { // Aceleração automática
+        if(ud == KEY_UP) { // Aceleração Elétrica
             new Float:vx, Float:vy, Float:vz, Float:a;
             GetVehicleVelocity(BikeNovato[playerid], vx, vy, vz);
             GetVehicleZAngle(BikeNovato[playerid], a);
             
+            // Impulso para onde a bike aponta
             if(vx < 0.7 && vy < 0.7) {
                 SetVehicleVelocity(BikeNovato[playerid], 
-                    vx + (0.02 * floatsin(-a, degrees)), 
-                    vy + (0.02 * floatcos(-a, degrees)), 
+                    vx + (0.025 * floatsin(-a, degrees)), 
+                    vy + (0.025 * floatcos(-a, degrees)), 
                     vz);
             }
         }
@@ -114,54 +121,50 @@ public OnPlayerStateChange(playerid, newstate, oldstate) {
         if(BikeNovato[playerid] != -1) {
             DestroyVehicle(BikeNovato[playerid]);
             BikeNovato[playerid] = -1;
-            SendClientMessage(playerid, 0xFF0000FF, "[ECO] Bike removida automaticamente.");
+            SendClientMessage(playerid, 0xFF0000FF, "[ECO] Bike removida.");
         }
     }
     return 1;
 }
 
-// --- COMANDO GPS INTEGRADO ---
+// --- COMANDOS E DIALOGOS ---
 CMD:gps(playerid, params[]) {
-    new destinos[300];
-    strcat(destinos, "Banco LS\nPrefeitura\nAgência de Empregos\nHospital Central\nDelegacia de Polícia\nAeroporto (Spawn)");
-    ShowPlayerDialog(playerid, DIALOG_GPS, DIALOG_STYLE_LIST, "{00CCFF}GPS Cidade Full", destinos, "Marcar", "Fechar");
+    new d; strcat(d, "Banco LS\nPrefeitura\nAgência de Empregos\nHospital\nDelegacia\nAeroporto");
+    ShowPlayerDialog(playerid, DIALOG_GPS, DIALOG_STYLE_LIST, "GPS 2026", d, "Marcar", "Sair");
     return 1;
 }
 
-// --- RESPOSTAS DE DIÁLOGOS ---
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]) {
-    if(dialogid == DIALOG_REGISTER || dialogid == DIALOG_LOGIN) {
+    if(dialogid == DIALOG_REGISTER) {
         if(!response) return Kick(playerid);
-        
-        if(dialogid == DIALOG_REGISTER) {
-            if(strlen(inputtext) < 4) return MostrarLogin(playerid);
-            dini_Create(GetConta(playerid));
-            dini_Set(GetConta(playerid), "Senha", inputtext);
-            dini_IntSet(GetConta(playerid), "Grana", 5000); // Grana inicial
-        } else {
-            if(strcmp(inputtext, dini_Get(GetConta(playerid), "Senha"))) return MostrarLogin(playerid);
-            GivePlayerMoney(playerid, dini_Int(GetConta(playerid), "Grana")); // Carrega grana
-        }
-        
+        dini_Create(GetConta(playerid));
+        dini_Set(GetConta(playerid), "Senha", inputtext);
+        dini_IntSet(GetConta(playerid), "Grana", 5000);
         Logado[playerid] = true;
-        SetSpawnInfo(playerid, 0, SKIN_NOVATO, 1642.17, -2256.39, 13.49, 178.0, 0, 0, 0, 0, 0, 0);
         SpawnPlayer(playerid);
         return 1;
     }
-
+    if(dialogid == DIALOG_LOGIN) {
+        if(!response) return Kick(playerid);
+        if(!strcmp(inputtext, dini_Get(GetConta(playerid), "Senha"))) {
+            Logado[playerid] = true;
+            GivePlayerMoney(playerid, dini_Int(GetConta(playerid), "Grana"));
+            SpawnPlayer(playerid);
+        } else MostrarLogin(playerid);
+        return 1;
+    }
     if(dialogid == DIALOG_GPS && response) {
-        new Float:X, Float:Y, Float:Z, local[32];
+        new Float:X, Float:Y, Float:Z;
         switch(listitem) {
-            case 0: { X = 1467.0; Y = -1010.0; Z = 26.0; local = "Banco LS"; }
-            case 1: { X = 1481.0; Y = -1741.0; Z = 13.0; local = "Prefeitura"; }
-            case 2: { X = 1154.0; Y = -1770.0; Z = 13.0; local = "Agência de Empregos"; }
-            case 3: { X = 1172.3; Y = -1341.3; Z = 13.5; local = "Hospital Central"; }
-            case 4: { X = 1543.0; Y = -1675.0; Z = 13.5; local = "Delegacia"; }
-            case 5: { X = 1642.17; Y = -2256.39; Z = 13.49; local = "Aeroporto"; }
+            case 0: { X = 1467.0; Y = -1010.0; Z = 26.0; }
+            case 1: { X = 1481.0; Y = -1741.0; Z = 13.0; }
+            case 2: { X = 1154.0; Y = -1770.0; Z = 13.0; }
+            case 3: { X = 1172.3; Y = -1341.3; Z = 13.5; }
+            case 4: { X = 1543.0; Y = -1675.0; Z = 13.5; }
+            case 5: { X = 1642.17; Y = -2256.39; Z = 13.49; }
         }
         SetPlayerCheckpoint(playerid, X, Y, Z, 4.0);
-        new msg[64]; format(msg, sizeof(msg), "{00FF00}[GPS] Destino marcado: %s", local);
-        SendClientMessage(playerid, -1, msg);
+        SendClientMessage(playerid, 0x00FF00FF, "Destino marcado!");
         return 1;
     }
     return 0;
@@ -169,6 +172,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]) {
 
 public OnPlayerEnterCheckpoint(playerid) {
     DisablePlayerCheckpoint(playerid);
-    SendClientMessage(playerid, 0xFFFF00FF, "[GPS] Você chegou ao destino!");
+    SendClientMessage(playerid, 0xFFFF00FF, "Você chegou!");
     return 1;
 }
