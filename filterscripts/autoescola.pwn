@@ -12,29 +12,28 @@
 #define VEH_CAMINHAO    403 
 
 // --- COORDENADAS ---
-// Entrada na calçada (conforme você passou)
 #define AUTO_EXT_X 1412.0202
 #define AUTO_EXT_Y -1699.9926
 #define AUTO_EXT_Z 13.5394
 
-// INTERIOR OFICIAL AUTOESCOLA (Coordenadas de corredor estável para não cair)
+// INTERIOR ID 3 (Posição central estável para evitar quedas nas bordas)
 #define AUTO_INT_X 2045.5414
 #define AUTO_INT_Y 154.2185
 #define AUTO_INT_Z 1061.1110
 #define AUTO_INT_ID 3
 
-// Balcão de Atendimento (Dentro do interior)
 #define AUTO_BALCAO_X 2043.9105
 #define AUTO_BALCAO_Y 164.7176
 #define AUTO_BALCAO_Z 1061.1110
 
-// Spawn do Veículo (Rua)
 #define SPAWN_V_X 1400.0
 #define SPAWN_V_Y -1670.0
 #define SPAWN_V_Z 13.5
 #define SPAWN_V_A 90.0
 
 new EmTeste[MAX_PLAYERS], VeiculoTeste[MAX_PLAYERS], CategoriaTeste[MAX_PLAYERS], CheckStep[MAX_PLAYERS];
+
+// --- FUNÇÕES AUXILIARES ---
 
 stock CNHFile(playerid) {
     new name[MAX_PLAYER_NAME], str[64];
@@ -43,35 +42,42 @@ stock CNHFile(playerid) {
     return str;
 }
 
+forward DescongelarPlayer(playerid);
+public DescongelarPlayer(playerid) {
+    TogglePlayerControllable(playerid, true);
+    SetCameraBehindPlayer(playerid);
+    return 1;
+}
+
+// --- CALLBACKS ---
+
 public OnFilterScriptInit() {
-    // ENTRADA: Calçada
     CreatePickup(1318, 1, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z, -1); 
     Create3DTextLabel("{FFFFFF}Autoescola\n{777777}Aperte 'H' para entrar", -1, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z + 0.5, 10.0, 0);
 
-    // SAÍDA: Dentro
     CreatePickup(1318, 1, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z, -1);
     Create3DTextLabel("{FFFFFF}Sair\n{777777}Aperte 'H'", -1, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z + 0.5, 10.0, 0);
 
-    // BALCÃO
     CreatePickup(1239, 1, AUTO_BALCAO_X, AUTO_BALCAO_Y, AUTO_BALCAO_Z, -1);
     Create3DTextLabel("{00FF00}Atendimento\n{FFFFFF}Use /exame", -1, AUTO_BALCAO_X, AUTO_BALCAO_Y, AUTO_BALCAO_Z + 0.5, 8.0, 0);
-    
-    print(">> [AUTOESCOLA 2026] Interior ID 3 Estabilizado Carregado.");
     return 1;
 }
 
 public OnPlayerKeyStateChange(playerid, newkeys, oldkeys) {
     if(newkeys & KEY_CTRL_BACK) { 
-        // Entrar na Autoescola
+        // ENTRAR: Congela o player por 1.5s para o chão carregar
         if(IsPlayerInRangeOfPoint(playerid, 2.0, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z)) {
+            TogglePlayerControllable(playerid, false);
             SetPlayerInterior(playerid, AUTO_INT_ID);
-            SetPlayerPos(playerid, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z);
-            SetPlayerFacingAngle(playerid, 270.0);
+            SetPlayerPos(playerid, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z + 0.2);
+            SetTimerEx("DescongelarPlayer", 1500, false, "i", playerid);
         }
-        // Sair da Autoescola
+        // SAIR
         else if(IsPlayerInRangeOfPoint(playerid, 2.0, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z)) {
+            TogglePlayerControllable(playerid, false);
             SetPlayerInterior(playerid, 0);
             SetPlayerPos(playerid, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z);
+            SetTimerEx("DescongelarPlayer", 1500, false, "i", playerid);
         }
     }
     return 1;
@@ -80,10 +86,10 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys) {
 public OnPlayerCommandText(playerid, cmdtext[]) {
     if(!strcmp(cmdtext, "/exame", true)) {
         if(!IsPlayerInRangeOfPoint(playerid, 3.0, AUTO_BALCAO_X, AUTO_BALCAO_Y, AUTO_BALCAO_Z))
-            return SendClientMessage(playerid, -1, "{FF0000}Vá até o balcão de atendimento!");
+            return SendClientMessage(playerid, -1, "{FF0000}Vá até o balcão!");
 
-        ShowPlayerDialog(playerid, 9955, DIALOG_STYLE_LIST, "{00CCFF}Autoescola - Categorias", 
-            "Categoria A (Moto) - $3.000\nCategoria B (Carro) - $7.000\nCategoria C (Caminhão) - $15.000", "Escolher", "Sair");
+        ShowPlayerDialog(playerid, 9955, DIALOG_STYLE_LIST, "{00CCFF}Autoescola", 
+            "Moto - $3.000\nCarro - $7.000\nCaminhão - $15.000", "Escolher", "Sair");
         return 1;
     }
     return 0;
@@ -101,20 +107,24 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]) {
         if(GetPlayerMoney(playerid) < preco) return SendClientMessage(playerid, -1, "{FF0000}Dinheiro insuficiente!");
         
         GivePlayerMoney(playerid, -preco);
-        
-        // Sai do interior para a rua
         SetPlayerInterior(playerid, 0);
         SetPlayerPos(playerid, SPAWN_V_X, SPAWN_V_Y, SPAWN_V_Z);
         
-        EmTeste[playerid] = 1;
-        CheckStep[playerid] = 0;
-        
+        EmTeste[playerid] = 1; CheckStep[playerid] = 0;
         VeiculoTeste[playerid] = CreateVehicle(veh, SPAWN_V_X, SPAWN_V_Y, SPAWN_V_Z, SPAWN_V_A, 1, 1, 120);
-        PutPlayerInVehicle(playerid, VeiculoTeste[playerid], 0);
+        
+        // Delay de 500ms para garantir que o player saiu do interior antes de entrar no carro
+        SetTimerEx("ColocarNoVeiculo", 500, false, "ii", playerid, VeiculoTeste[playerid]);
         
         SetPlayerCheckpoint(playerid, 1340.0, -1660.0, 13.5, 5.0);
-        SendClientMessage(playerid, 0xFFFF00FF, "[AUTOESCOLA] Teste iniciado! Dirija com cuidado.");
+        SendClientMessage(playerid, 0xFFFF00FF, "[AUTOESCOLA] Teste iniciado!");
     }
+    return 1;
+}
+
+forward ColocarNoVeiculo(playerid, veiculo);
+public ColocarNoVeiculo(playerid, veiculo) {
+    PutPlayerInVehicle(playerid, veiculo, 0);
     return 1;
 }
 
@@ -132,24 +142,18 @@ public OnPlayerEnterCheckpoint(playerid) {
 
 stock FinalizarTeste(playerid, bool:aprovado) {
     DisablePlayerCheckpoint(playerid);
-    if(VeiculoTeste[playerid] != -1) {
-        DestroyVehicle(VeiculoTeste[playerid]);
-        VeiculoTeste[playerid] = -1;
-    }
+    if(VeiculoTeste[playerid] != -1) DestroyVehicle(VeiculoTeste[playerid]);
+    VeiculoTeste[playerid] = -1;
     EmTeste[playerid] = 0;
     
     if(aprovado) {
         new file[64]; format(file, 64, "%s", CNHFile(playerid));
         if(!dini_Exists(file)) dini_Create(file);
-        
         if(CategoriaTeste[playerid] == 1) dini_IntSet(file, "Moto", 1);
         else if(CategoriaTeste[playerid] == 2) dini_IntSet(file, "Carro", 1);
         else if(CategoriaTeste[playerid] == 3) dini_IntSet(file, "Caminhao", 1);
-        
-        SendClientMessage(playerid, 0x00FF00FF, "[AUTOESCOLA] Aprovado! Licença emitida.");
-    } else {
-        SendClientMessage(playerid, 0xFF0000FF, "[AUTOESCOLA] Você falhou no teste.");
-    }
+        SendClientMessage(playerid, 0x00FF00FF, "[AUTOESCOLA] Aprovado!");
+    } else SendClientMessage(playerid, 0xFF0000FF, "[AUTOESCOLA] Falhou!");
     return 1;
 }
 
