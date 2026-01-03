@@ -1,7 +1,6 @@
 #define FILTERSCRIPT
 #include <a_samp>
 #include <dini>
-#include <float>
 
 // --- ECONOMIA 2026 ---
 #define PRECO_MOTO      3000
@@ -12,34 +11,33 @@
 #define VEH_CARRO       405 
 #define VEH_CAMINHAO    403 
 
-// --- COORDENADAS RUA (SUA CALÇADA) ---
+// --- COORDENADAS ---
 #define AUTO_EXT_X 1412.0202
 #define AUTO_EXT_Y -1699.9926
 #define AUTO_EXT_Z 13.5394
 
-// --- NOVO INTERIOR EXCLUSIVO (ID 18 - Centro de Conferências) ---
-// Este interior é estável e longe da prefeitura
-#define AUTO_INT_X -2026.4673
-#define AUTO_INT_Y -467.4589
-#define AUTO_INT_Z 1035.1719
-#define AUTO_INT_ID 18
+// INTERIOR REAL DA AUTOESCOLA (ID 3)
+#define AUTO_INT_X 2046.0
+#define AUTO_INT_Y 155.0
+#define AUTO_INT_Z 1060.98
+#define AUTO_INT_ID 3
+#define AUTO_VW     10 
 
-// Balcão de Atendimento (Dentro do Interior 18)
-#define AUTO_BALCAO_X -2029.35
-#define AUTO_BALCAO_Y -484.05
-#define AUTO_BALCAO_Z 1035.17
+#define AUTO_BALCAO_X 2043.0
+#define AUTO_BALCAO_Y 162.0
+#define AUTO_BALCAO_Z 1060.98
 
-// Spawn do Veículo (Rua)
 #define SPAWN_V_X 1400.0
 #define SPAWN_V_Y -1670.0
 #define SPAWN_V_Z 13.5
 #define SPAWN_V_A 90.0
 
 new EmTeste[MAX_PLAYERS], VeiculoTeste[MAX_PLAYERS], CategoriaTeste[MAX_PLAYERS], CheckStep[MAX_PLAYERS];
+new ChaoSeguranca[MAX_PLAYERS]; // Variável para o chão virtual
 
-// Corrigido para compilar 100% (Retorno de string)
+// Corrigido para compilar 100%
 stock CNHFile(playerid) {
-    new name[MAX_PLAYER_NAME], path[64];
+    new name[MAX_PLAYER_NAME], path[128];
     GetPlayerName(playerid, name, sizeof(name));
     format(path, sizeof(path), "licencas/%s.ini", name);
     return path;
@@ -49,44 +47,54 @@ forward LiberarPlayer(playerid);
 public LiberarPlayer(playerid) {
     TogglePlayerControllable(playerid, true);
     SetCameraBehindPlayer(playerid);
+    
+    // Deleta o chão virtual após o carregamento do mapa real
+    if(ChaoSeguranca[playerid] != 0) {
+        DestroyPlayerObject(playerid, ChaoSeguranca[playerid]);
+        ChaoSeguranca[playerid] = 0;
+    }
     return 1;
 }
 
 public OnFilterScriptInit() {
-    // Desativa entradas originais do GTA
     DisableInteriorEnterExits();
 
-    // Pickups Rua
     CreatePickup(1318, 1, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z, 0); 
-    Create3DTextLabel("{00CCFF}Autoescola\n{FFFFFF}Aperte 'H' para entrar", -1, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z + 0.5, 10.0, 0);
+    Create3DTextLabel("{00CCFF}Autoescola\n{FFFFFF}Pressione 'H' para entrar", -1, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z + 0.5, 10.0, 0);
 
-    // Pickups Interior (Mundo Virtual 0)
-    CreatePickup(1318, 1, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z, 0);
-    Create3DTextLabel("{FFFFFF}Sair\n{777777}Aperte 'H'", -1, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z + 0.5, 10.0, 0);
+    CreatePickup(1318, 1, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z, AUTO_VW);
+    Create3DTextLabel("{FFFFFF}Sair\n{777777}Pressione 'H'", -1, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z + 0.5, 10.0, AUTO_VW);
 
-    // Balcão /exame
-    CreatePickup(1239, 1, AUTO_BALCAO_X, AUTO_BALCAO_Y, AUTO_BALCAO_Z, 0);
-    Create3DTextLabel("{00FF00}Atendimento Autoescola\n{FFFFFF}Use /exame", -1, AUTO_BALCAO_X, AUTO_BALCAO_Y, AUTO_BALCAO_Z + 0.5, 8.0, 0);
-    
-    print(">> [AUTOESCOLA 2026] Sistema com Interior 18 (Exclusivo) Carregado.");
+    CreatePickup(1239, 1, AUTO_BALCAO_X, AUTO_BALCAO_Y, AUTO_BALCAO_Z, AUTO_VW);
+    Create3DTextLabel("{00FF00}Atendimento\n{FFFFFF}Use /exame", -1, AUTO_BALCAO_X, AUTO_BALCAO_Y, AUTO_BALCAO_Z + 0.5, 8.0, AUTO_VW);
     return 1;
 }
 
 public OnPlayerKeyStateChange(playerid, newkeys, oldkeys) {
     if(newkeys & KEY_CTRL_BACK) { 
-        // Entrar na Autoescola
+        // ENTRAR
         if(IsPlayerInRangeOfPoint(playerid, 2.5, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z)) {
             TogglePlayerControllable(playerid, false);
+            
+            // CRIA O CHÃO VIRTUAL (Objeto de colisão invisível)
+            ChaoSeguranca[playerid] = CreatePlayerObject(playerid, 19129, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z - 1.0, 0.0, 0.0, 0.0);
+            
             SetPlayerInterior(playerid, AUTO_INT_ID);
+            SetPlayerVirtualWorld(playerid, AUTO_VW);
             SetPlayerPos(playerid, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z);
-            SetTimerEx("LiberarPlayer", 2000, false, "i", playerid);
+            
+            SetTimerEx("LiberarPlayer", 4000, false, "i", playerid); // 4 segundos para garantir
+            GameTextForPlayer(playerid, "~w~Carregando...", 3000, 3);
+            return 1;
         }
-        // Sair da Autoescola
-        else if(IsPlayerInRangeOfPoint(playerid, 2.5, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z)) {
+        // SAIR
+        if(IsPlayerInRangeOfPoint(playerid, 2.5, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z)) {
             TogglePlayerControllable(playerid, false);
             SetPlayerInterior(playerid, 0);
+            SetPlayerVirtualWorld(playerid, 0);
             SetPlayerPos(playerid, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z);
             SetTimerEx("LiberarPlayer", 1500, false, "i", playerid);
+            return 1;
         }
     }
     return 1;
@@ -94,11 +102,10 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys) {
 
 public OnPlayerCommandText(playerid, cmdtext[]) {
     if(!strcmp(cmdtext, "/exame", true)) {
-        // Agora o IsPlayerInRange verifica as coordenadas do NOVO interior
         if(!IsPlayerInRangeOfPoint(playerid, 4.0, AUTO_BALCAO_X, AUTO_BALCAO_Y, AUTO_BALCAO_Z))
-            return SendClientMessage(playerid, -1, "{FF0000}Vá até o balcão da Autoescola!");
+            return SendClientMessage(playerid, -1, "Vá até o balcão!");
 
-        ShowPlayerDialog(playerid, 9955, DIALOG_STYLE_LIST, "{00CCFF}Categorias CNH", "Moto ($3k)\nCarro ($7k)\nCaminhão ($15k)", "Iniciar", "Sair");
+        ShowPlayerDialog(playerid, 9955, DIALOG_STYLE_LIST, "Autoescola", "Moto\nCarro\nCaminhao", "Iniciar", "Sair");
         return 1;
     }
     return 0;
@@ -111,17 +118,18 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]) {
         else if(listitem == 1) { preco = PRECO_CARRO; veh = VEH_CARRO; CategoriaTeste[playerid] = 2; }
         else { preco = PRECO_CAMINHAO; veh = VEH_CAMINHAO; CategoriaTeste[playerid] = 3; }
 
-        if(GetPlayerMoney(playerid) < preco) return SendClientMessage(playerid, -1, "{FF0000}Dinheiro insuficiente!");
+        if(GetPlayerMoney(playerid) < preco) return SendClientMessage(playerid, -1, "Sem dinheiro!");
         
         GivePlayerMoney(playerid, -preco);
         SetPlayerInterior(playerid, 0);
-        SetPlayerPos(playerid, SPAWN_V_X, SPAWN_V_Y, SPAWN_V_Z + 1.0);
-        TogglePlayerControllable(playerid, false); 
-
+        SetPlayerVirtualWorld(playerid, 0);
+        SetPlayerPos(playerid, SPAWN_V_X, SPAWN_V_Y, SPAWN_V_Z + 0.5);
+        
         EmTeste[playerid] = 1; 
         VeiculoTeste[playerid] = CreateVehicle(veh, SPAWN_V_X, SPAWN_V_Y, SPAWN_V_Z, SPAWN_V_A, 1, 1, 120);
         
-        SetTimerEx("IniciaVeh", 2000, false, "ii", playerid, VeiculoTeste[playerid]);
+        SetTimerEx("IniciaVeh", 1500, false, "ii", playerid, VeiculoTeste[playerid]);
+        return 1;
     }
     return 1;
 }
@@ -129,9 +137,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]) {
 forward IniciaVeh(playerid, v);
 public IniciaVeh(playerid, v) {
     PutPlayerInVehicle(playerid, v, 0);
-    TogglePlayerControllable(playerid, true);
     SetPlayerCheckpoint(playerid, 1340.0, -1660.0, 13.5, 5.0);
-    SendClientMessage(playerid, 0xFFFF00FF, "[AUTOESCOLA] Teste iniciado!");
+    SendClientMessage(playerid, 0xFFFF00FF, "Teste iniciado!");
     return 1;
 }
 
@@ -150,11 +157,11 @@ stock FinalizarTeste(playerid, bool:aprovado) {
     VeiculoTeste[playerid] = -1;
     EmTeste[playerid] = 0;
     if(aprovado) {
-        new path[64]; format(path, sizeof(path), "%s", CNHFile(playerid));
+        new path[128]; format(path, sizeof(path), "%s", CNHFile(playerid));
         if(!dini_Exists(path)) dini_Create(path);
         dini_IntSet(path, "Habilitado", 1);
-        SendClientMessage(playerid, 0x00FF00FF, "[AUTOESCOLA] Aprovado!");
-    } else SendClientMessage(playerid, 0xFF0000FF, "[AUTOESCOLA] Reprovado!");
+        SendClientMessage(playerid, 0x00FF00FF, "Aprovado!");
+    }
     return 1;
 }
 
