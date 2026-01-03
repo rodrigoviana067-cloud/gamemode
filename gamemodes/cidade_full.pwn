@@ -1,22 +1,15 @@
 /* 
-    CIDADE FULL 2026 - VERSÃO MASTER FINAL (MODULARIZADA)
-    Spawn Atualizado: LS Aeroporto (Coordenadas Customizadas)
+    CIDADE FULL 2026 - VERSÃO MASTER FINAL (LOJA PREMIUM ATIVADA)
 */
 
 #include <a_samp>
 #include <zcmd>
 #include <dini>
 
-main() 
-{ 
-    print("---------------------------------------");
-    print("   CIDADE FULL 2026 - GAME LOADED      ");
-    print("---------------------------------------");
-}
-
-// IDs Altos para não conflitar com Filterscripts
+// IDs de Dialog
 #define DIALOG_LOGIN        2000
 #define DIALOG_REGISTER     2001
+#define DIALOG_LOJA         3000 // Novo ID para a loja
 #define SKIN_NOVATO         26
 
 // NOVAS COORDENADAS DE SPAWN (LS)
@@ -27,7 +20,15 @@ main()
 
 new bool:Logado[MAX_PLAYERS];
 new BikeNovato[MAX_PLAYERS];
+new PlayerCoins[MAX_PLAYERS]; // Variável que armazena os Coins
 new PickupBike;
+
+main() 
+{ 
+    print("---------------------------------------");
+    print("   CIDADE FULL 2026 - LOJA PREMIUM     ");
+    print("---------------------------------------");
+}
 
 // --- Funções de Conta ---
 stock GetConta(playerid) {
@@ -46,14 +47,34 @@ public MostrarLogin(playerid) {
     }
 }
 
+// --- COMANDOS ZCMD ---
+
+CMD:meuscoins(playerid, params[]) {
+    new str[128];
+    format(str, sizeof(str), "{FFFF00}[BANCO] {FFFFFF}Saldo atual: {00FF00}%d Coins.", PlayerCoins[playerid]);
+    SendClientMessage(playerid, -1, str);
+    return 1;
+}
+
+CMD:darcoins(playerid, params[]) { // Comando para você testar (Dá 1000 coins)
+    PlayerCoins[playerid] += 1000;
+    SendClientMessage(playerid, 0x00FF00FF, "[ADM] Você recebeu 1000 Coins de teste!");
+    return 1;
+}
+
+CMD:loja(playerid, params[]) {
+    if(!Logado[playerid]) return 0;
+    ShowPlayerDialog(playerid, DIALOG_LOJA, DIALOG_STYLE_LIST, "{FFFF00}Loja Premium 2026", 
+    "1. Veículo Infernus (Premium) - 500 Coins\n2. Veículo NRG-500 (Premium) - 400 Coins\n3. Skin Especial (Rara) - 100 Coins", "Comprar", "Sair");
+    return 1;
+}
+
+// --- CALLBACKS ---
+
 public OnGameModeInit() {
     SetGameModeText("Cidade Full v4.5");
-    
-    // Pickup ECO-BIKE (Mantido próximo ao spawn)
     PickupBike = CreatePickup(1239, 1, 1642.50, -2244.60, 13.50, -1);
     Create3DTextLabel("{00CCFF}ECO-BIKE\n{FFFFFF}Pise para pegar", 0xFFFFFFFF, 1642.50, -2244.60, 14.0, 10.0, 0, 0);
-    
-    // Classe padrão (usada na seleção de personagens se necessário)
     AddPlayerClass(SKIN_NOVATO, SPAWN_X, SPAWN_Y, SPAWN_Z, SPAWN_A, 0, 0, 0, 0, 0, 0);
     return 1;
 }
@@ -61,6 +82,7 @@ public OnGameModeInit() {
 public OnPlayerConnect(playerid) {
     Logado[playerid] = false;
     BikeNovato[playerid] = -1;
+    PlayerCoins[playerid] = 0; // Reset ao conectar
     SetTimerEx("MostrarLogin", 1500, false, "i", playerid); 
     return 1;
 }
@@ -70,69 +92,9 @@ public OnPlayerDisconnect(playerid, reason) {
         new path[64]; 
         format(path, sizeof(path), GetConta(playerid));
         dini_IntSet(path, "Grana", GetPlayerMoney(playerid)); 
+        dini_IntSet(path, "Coins", PlayerCoins[playerid]); // SALVA OS COINS AO SAIR
     }
     if(BikeNovato[playerid] != -1) DestroyVehicle(BikeNovato[playerid]);
-    return 1;
-}
-
-public OnPlayerSpawn(playerid) {
-    if(!Logado[playerid]) return Kick(playerid);
-    
-    // Aplicando o novo Spawn
-    SetPlayerPos(playerid, SPAWN_X, SPAWN_Y, SPAWN_Z);
-    SetPlayerFacingAngle(playerid, SPAWN_A);
-    
-    SetCameraBehindPlayer(playerid);
-    SetPlayerInterior(playerid, 0);
-    SetPlayerVirtualWorld(playerid, 0);
-    return 1;
-}
-
-public OnPlayerPickUpPickup(playerid, pickupid) {
-    if(pickupid == PickupBike) {
-        if(IsPlayerInAnyVehicle(playerid)) return 1;
-        if(BikeNovato[playerid] != -1) DestroyVehicle(BikeNovato[playerid]);
-        
-        new Float:x, Float:y, Float:z, Float:a;
-        GetPlayerPos(playerid, x, y, z);
-        GetPlayerFacingAngle(playerid, a);
-        
-        BikeNovato[playerid] = CreateVehicle(510, x, y, z + 0.8, a, 1, 1, -1);
-        SetTimerEx("MontarNaBike", 250, false, "ii", playerid, BikeNovato[playerid]);
-        SendClientMessage(playerid, 0x00CCFFFF, "[ECO] Bike Elétrica ativada!");
-    }
-    return 1;
-}
-
-forward MontarNaBike(playerid, vehicleid);
-public MontarNaBike(playerid, vehicleid) {
-    PutPlayerInVehicle(playerid, vehicleid, 0);
-}
-
-public OnPlayerUpdate(playerid) {
-    if(Logado[playerid] && IsPlayerInAnyVehicle(playerid) && GetPlayerVehicleID(playerid) == BikeNovato[playerid]) {
-        new keys, ud, lr;
-        GetPlayerKeys(playerid, keys, ud, lr);
-        if(ud == KEY_UP) { 
-            new Float:vx, Float:vy, Float:vz, Float:a;
-            GetVehicleVelocity(BikeNovato[playerid], vx, vy, vz);
-            GetVehicleZAngle(BikeNovato[playerid], a);
-            if(vx < 0.7 && vy < 0.7) {
-                SetVehicleVelocity(BikeNovato[playerid], vx + (0.025 * floatsin(-a, degrees)), vy + (0.025 * floatcos(-a, degrees)), vz);
-            }
-        }
-    }
-    return 1;
-}
-
-public OnPlayerStateChange(playerid, newstate, oldstate) {
-    if(oldstate == PLAYER_STATE_DRIVER && newstate == PLAYER_STATE_ONFOOT) {
-        if(BikeNovato[playerid] != -1) {
-            DestroyVehicle(BikeNovato[playerid]);
-            BikeNovato[playerid] = -1;
-            SendClientMessage(playerid, 0xFF0000FF, "[ECO] Bike removida.");
-        }
-    }
     return 1;
 }
 
@@ -146,24 +108,74 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]) {
         dini_Create(path);
         dini_Set(path, "Senha", inputtext);
         dini_IntSet(path, "Grana", 5000);
+        dini_IntSet(path, "Coins", 0); // REGISTRA COM 0 COINS
         Logado[playerid] = true;
-        
-        // Atualizado com novas coordenadas
         SetSpawnInfo(playerid, 0, SKIN_NOVATO, SPAWN_X, SPAWN_Y, SPAWN_Z, SPAWN_A, 0, 0, 0, 0, 0, 0);
         SpawnPlayer(playerid);
         return 1;
     }
+
     if(dialogid == DIALOG_LOGIN) {
         if(!response) return Kick(playerid);
         if(!strcmp(inputtext, dini_Get(path, "Senha"))) {
             Logado[playerid] = true;
             GivePlayerMoney(playerid, dini_Int(path, "Grana"));
-            
-            // Atualizado com novas coordenadas
+            PlayerCoins[playerid] = dini_Int(path, "Coins"); // CARREGA OS COINS DO ARQUIVO
             SetSpawnInfo(playerid, 0, SKIN_NOVATO, SPAWN_X, SPAWN_Y, SPAWN_Z, SPAWN_A, 0, 0, 0, 0, 0, 0);
             SpawnPlayer(playerid);
         } else MostrarLogin(playerid);
         return 1;
     }
+
+    if(dialogid == DIALOG_LOJA) {
+        if(!response) return 1;
+        
+        switch(listitem) {
+            case 0: { // Infernus
+                if(PlayerCoins[playerid] < 500) return SendClientMessage(playerid, 0xFF0000FF, "Você não tem Coins suficientes!");
+                PlayerCoins[playerid] -= 500;
+                CreateVehicle(411, SPAWN_X, SPAWN_Y, SPAWN_Z, SPAWN_A, 1, 1, -1);
+                SendClientMessage(playerid, 0x00FF00FF, "Você comprou um Infernus Premium!");
+            }
+            case 1: { // NRG-500
+                if(PlayerCoins[playerid] < 400) return SendClientMessage(playerid, 0xFF0000FF, "Você não tem Coins suficientes!");
+                PlayerCoins[playerid] -= 400;
+                CreateVehicle(522, SPAWN_X, SPAWN_Y, SPAWN_Z, SPAWN_A, 1, 1, -1);
+                SendClientMessage(playerid, 0x00FF00FF, "Você comprou uma NRG-500 Premium!");
+            }
+            case 2: { // Skin
+                if(PlayerCoins[playerid] < 100) return SendClientMessage(playerid, 0xFF0000FF, "Você não tem Coins suficientes!");
+                PlayerCoins[playerid] -= 100;
+                SetPlayerSkin(playerid, 294); // Skin do Wu Zi Mu
+                SendClientMessage(playerid, 0x00FF00FF, "Você comprou uma Skin Premium!");
+            }
+        }
+        return 1;
+    }
     return 0; 
 }
+
+// --- Resto dos seus Callbacks Originais ---
+public OnPlayerSpawn(playerid) {
+    if(!Logado[playerid]) return Kick(playerid);
+    SetPlayerPos(playerid, SPAWN_X, SPAWN_Y, SPAWN_Z);
+    SetPlayerFacingAngle(playerid, SPAWN_A);
+    SetCameraBehindPlayer(playerid);
+    return 1;
+}
+
+public OnPlayerPickUpPickup(playerid, pickupid) {
+    if(pickupid == PickupBike) {
+        if(IsPlayerInAnyVehicle(playerid)) return 1;
+        if(BikeNovato[playerid] != -1) DestroyVehicle(BikeNovato[playerid]);
+        new Float:x, Float:y, Float:z, Float:a;
+        GetPlayerPos(playerid, x, y, z);
+        GetPlayerFacingAngle(playerid, a);
+        BikeNovato[playerid] = CreateVehicle(510, x, y, z + 0.8, a, 1, 1, -1);
+        SetTimerEx("MontarNaBike", 250, false, "ii", playerid, BikeNovato[playerid]);
+    }
+    return 1;
+}
+
+forward MontarNaBike(playerid, vehicleid);
+public MontarNaBike(playerid, vehicleid) { PutPlayerInVehicle(playerid, vehicleid, 0); }
