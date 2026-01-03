@@ -1,6 +1,6 @@
 /* 
     CIDADE FULL 2026 - VERSÃO MYSQL MASTER FINAL
-    Conexão LemeHost: Configurada
+    Conexão LemeHost: 51.38.205.167
 */
 
 #include <a_samp>
@@ -42,10 +42,8 @@ main()
 public OnGameModeInit() {
     SetGameModeText("Cidade Full v4.5 MySQL");
 
-    // Configurações de Conexão MySQL
-    new MySQLOpt: options = mysql_init_options();
-    mysql_set_option(options, MYSQL_OPT_RECONNECT, true);
-    handle = mysql_connect(MYSQL_HOST, MYSQL_USER, MYSQL_PASS, MYSQL_DB, options);
+    // CONEXÃO DIRETA (CORRIGIDO PARA EVITAR ERRO DE SYMBOL)
+    handle = mysql_connect(MYSQL_HOST, MYSQL_USER, MYSQL_PASS, MYSQL_DB);
 
     if(mysql_errno(handle) != 0) {
         print("[MYSQL]: ERRO - Falha ao conectar no banco da LemeHost!");
@@ -83,7 +81,7 @@ public VerificarConta(playerid) {
 
 public OnPlayerDisconnect(playerid, reason) {
     if(Logado[playerid]) {
-        new query[150], name[MAX_PLAYER_NAME];
+        new query[256], name[MAX_PLAYER_NAME];
         GetPlayerName(playerid, name, sizeof(name));
         mysql_format(handle, query, sizeof(query), "UPDATE `contas` SET `grana` = %d, `coins` = %d WHERE `nome` = '%e'", 
             GetPlayerMoney(playerid), PlayerCoins[playerid], name);
@@ -150,6 +148,8 @@ public AposLogin(playerid) {
     if(cache_num_rows() > 0) {
         Logado[playerid] = true;
         new grana_temp, coins_temp;
+        
+        // Sintaxe compatível com R39+
         cache_get_value_name_int(0, "grana", grana_temp);
         cache_get_value_name_int(0, "coins", coins_temp);
         
@@ -180,8 +180,14 @@ CMD:meussaldos(playerid, params[]) {
     return 1;
 }
 
-// --- ECO-BIKE ---
+CMD:darcoins(playerid, params[]) {
+    PlayerCoins[playerid] += 1000;
+    SendClientMessage(playerid, -1, "[ADM] Você recebeu 1000 Coins de teste.");
+    return 1;
+}
+
 public OnPlayerSpawn(playerid) {
+    if(!Logado[playerid]) return Kick(playerid);
     SetPlayerPos(playerid, SPAWN_X, SPAWN_Y, SPAWN_Z);
     return 1;
 }
