@@ -1,8 +1,9 @@
 #define FILTERSCRIPT
 #include <a_samp>
 #include <dini>
+#include <float>
 
-// --- ECONOMIA 2026 ---
+// --- CONFIGURAÇÕES ECONOMIA 2026 ---
 #define PRECO_MOTO      3000
 #define PRECO_CARRO     7000
 #define PRECO_CAMINHAO  15000
@@ -12,21 +13,26 @@
 #define VEH_CAMINHAO    403 
 
 // --- COORDENADAS ---
-// Calçada da Autoescola (Sua coordenada)
+// Calçada (Sua coordenada)
 #define AUTO_EXT_X 1412.0202
 #define AUTO_EXT_Y -1699.9926
 #define AUTO_EXT_Z 13.5394
 
-// INTERIOR ID 12 (Loja de Discos - Seguro e sem bugs de parede)
-#define AUTO_INT_X -26.3117
-#define AUTO_INT_Y -55.5705
-#define AUTO_INT_Z 1003.5469
+// INTERIOR ID 12 - Nascer longe da porta para evitar bugs
+#define AUTO_INT_X -26.68  // Ponto de spawn (atrás do balcão)
+#define AUTO_INT_Y -57.71
+#define AUTO_INT_Z 1003.54
 #define AUTO_INT_ID 12
 
-// Balcão de Atendimento (Dentro do Interior 12)
-#define AUTO_BALCAO_X -25.1000
-#define AUTO_BALCAO_Y -57.8000
-#define AUTO_BALCAO_Z 1003.5469
+// Balcão de Atendimento (Comando /exame)
+#define AUTO_BALCAO_X -25.50
+#define AUTO_BALCAO_Y -55.80
+#define AUTO_BALCAO_Z 1003.54
+
+// Pickup de Saída (Na porta do interior)
+#define AUTO_SAIDA_X -27.80
+#define AUTO_SAIDA_Y -51.50
+#define AUTO_SAIDA_Z 1003.54
 
 // Spawn do Veículo (Rua)
 #define SPAWN_V_X 1400.0
@@ -36,11 +42,12 @@
 
 new EmTeste[MAX_PLAYERS], VeiculoTeste[MAX_PLAYERS], CategoriaTeste[MAX_PLAYERS], CheckStep[MAX_PLAYERS];
 
+// Corrigido para compilar: String formatada
 stock CNHFile(playerid) {
-    new name[MAX_PLAYER_NAME], str;
+    new name[MAX_PLAYER_NAME], path[128];
     GetPlayerName(playerid, name, sizeof(name));
-    format(str, sizeof(str), "licencas/%s.ini", name);
-    return str;
+    format(path, sizeof(path), "licencas/%s.ini", name);
+    return path;
 }
 
 forward DescongelarPlayer(playerid);
@@ -51,29 +58,31 @@ public DescongelarPlayer(playerid) {
 }
 
 public OnFilterScriptInit() {
-    // ENTRADA: Calçada
+    // Pickup na Rua
     CreatePickup(1318, 1, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z, 0); 
     Create3DTextLabel("{FFFFFF}Autoescola\n{777777}Aperte 'H' para entrar", -1, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z + 0.5, 15.0, 0);
 
-    // SAÍDA: Interior
-    CreatePickup(1318, 1, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z, 0);
-    Create3DTextLabel("{FFFFFF}Sair\n{777777}Aperte 'H'", -1, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z + 0.5, 10.0, 0);
+    // Pickup de Saída dentro do interior
+    CreatePickup(1318, 1, AUTO_SAIDA_X, AUTO_SAIDA_Y, AUTO_SAIDA_Z, 0);
+    Create3DTextLabel("{FFFFFF}Sair\n{777777}Aperte 'H'", -1, AUTO_SAIDA_X, AUTO_SAIDA_Y, AUTO_SAIDA_Z + 0.5, 10.0, 0);
 
-    // BALCÃO
+    // Balcão /exame
     CreatePickup(1239, 1, AUTO_BALCAO_X, AUTO_BALCAO_Y, AUTO_BALCAO_Z, 0);
     Create3DTextLabel("{00FF00}Atendimento\n{FFFFFF}Use /exame", -1, AUTO_BALCAO_X, AUTO_BALCAO_Y, AUTO_BALCAO_Z + 0.5, 8.0, 0);
     return 1;
 }
 
 public OnPlayerKeyStateChange(playerid, newkeys, oldkeys) {
-    if(newkeys & KEY_CTRL_BACK) { // Tecla H
-        if(IsPlayerInRangeOfPoint(playerid, 2.5, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z)) {
+    if(newkeys & KEY_CTRL_BACK) { 
+        // Entrar (Vai para trás do balcão)
+        if(IsPlayerInRangeOfPoint(playerid, 2.0, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z)) {
             TogglePlayerControllable(playerid, false);
             SetPlayerInterior(playerid, AUTO_INT_ID);
             SetPlayerPos(playerid, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z);
             SetTimerEx("DescongelarPlayer", 2000, false, "i", playerid);
         }
-        else if(IsPlayerInRangeOfPoint(playerid, 2.5, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z)) {
+        // Sair (Usando o pickup da porta interna)
+        else if(IsPlayerInRangeOfPoint(playerid, 2.0, AUTO_SAIDA_X, AUTO_SAIDA_Y, AUTO_SAIDA_Z)) {
             TogglePlayerControllable(playerid, false);
             SetPlayerInterior(playerid, 0);
             SetPlayerPos(playerid, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z);
@@ -86,10 +95,9 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys) {
 public OnPlayerCommandText(playerid, cmdtext[]) {
     if(!strcmp(cmdtext, "/exame", true)) {
         if(!IsPlayerInRangeOfPoint(playerid, 4.0, AUTO_BALCAO_X, AUTO_BALCAO_Y, AUTO_BALCAO_Z))
-            return SendClientMessage(playerid, -1, "{FF0000}Vá até o balcão!");
+            return SendClientMessage(playerid, -1, "{FF0000}Va ate o balcao!");
 
-        ShowPlayerDialog(playerid, 9955, DIALOG_STYLE_LIST, "{00CCFF}Autoescola", 
-            "Categoria A (Moto)\nCategoria B (Carro)\nCategoria C (Caminhão)", "Iniciar", "Sair");
+        ShowPlayerDialog(playerid, 9955, DIALOG_STYLE_LIST, "{00CCFF}Autoescola", "Moto\nCarro\nCaminhao", "Iniciar", "Sair");
         return 1;
     }
     return 0;
@@ -102,7 +110,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]) {
         else if(listitem == 1) { preco = PRECO_CARRO; veh = VEH_CARRO; CategoriaTeste[playerid] = 2; }
         else { preco = PRECO_CAMINHAO; veh = VEH_CAMINHAO; CategoriaTeste[playerid] = 3; }
 
-        if(GetPlayerMoney(playerid) < preco) return SendClientMessage(playerid, -1, "{FF0000}Dinheiro insuficiente!");
+        if(GetPlayerMoney(playerid) < preco) return SendClientMessage(playerid, -1, "{FF0000}Sem dinheiro!");
         
         GivePlayerMoney(playerid, -preco);
         SetPlayerInterior(playerid, 0);
@@ -114,7 +122,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]) {
         
         SetTimerEx("PutIn", 1000, false, "ii", playerid, VeiculoTeste[playerid]);
         SetPlayerCheckpoint(playerid, 1340.0, -1660.0, 13.5, 5.0);
-        SendClientMessage(playerid, 0xFFFF00FF, "[AUTOESCOLA] Teste iniciado!");
     }
     return 1;
 }
@@ -136,12 +143,16 @@ stock FinalizarTeste(playerid, bool:aprovado) {
     if(VeiculoTeste[playerid] != -1) DestroyVehicle(VeiculoTeste[playerid]);
     VeiculoTeste[playerid] = -1;
     EmTeste[playerid] = 0;
+    
     if(aprovado) {
-        new file; format(file, 64, "%s", CNHFile(playerid));
-        if(!dini_Exists(file)) dini_Create(file);
-        if(CategoriaTeste[playerid] == 1) dini_IntSet(file, "Moto", 1);
-        else if(CategoriaTeste[playerid] == 2) dini_IntSet(file, "Carro", 1);
-        else if(CategoriaTeste[playerid] == 3) dini_IntSet(file, "Caminhao", 1);
+        new file_path[128]; // Corrigido para String
+        format(file_path, sizeof(file_path), "%s", CNHFile(playerid));
+        if(!dini_Exists(file_path)) dini_Create(file_path);
+        
+        if(CategoriaTeste[playerid] == 1) dini_IntSet(file_path, "Moto", 1);
+        else if(CategoriaTeste[playerid] == 2) dini_IntSet(file_path, "Carro", 1);
+        else if(CategoriaTeste[playerid] == 3) dini_IntSet(file_path, "Caminhao", 1);
+        
         SendClientMessage(playerid, 0x00FF00FF, "Aprovado!");
     } else SendClientMessage(playerid, 0xFF0000FF, "Falhou!");
     return 1;
