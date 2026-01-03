@@ -83,3 +83,16 @@ stock sscanf_fix(const texto[], &v1 = -1, &v2 = -1, &v3 = -1) {
     v3 = strval(texto[p+1]);
     return 0;
 }
+
+CMD:minhapos(playerid, params[]) {
+    if(!IsPlayerAdmin(playerid) && GetPVarInt(playerid, "AdminLevel") < 6) return 0;
+    
+    new Float:x, Float:y, Float:z, Float:a, str[128];
+    GetPlayerPos(playerid, x, y, z);
+    GetPlayerFacingAngle(playerid, a);
+    
+    format(str, sizeof(str), "{FFFF00}X: %.4f, Y: %.4f, Z: %.4f, A: %.4f", x, y, z, a);
+    SendClientMessage(playerid, -1, str);
+    print(str); // Também salva no log do servidor para você copiar com facilidade
+    return 1;
+}
