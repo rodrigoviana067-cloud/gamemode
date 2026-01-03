@@ -3,11 +3,17 @@
 #include <dini>
 #include <float>
 
-// --- CONFIGURAÇÕES ---
-#define AUTO_INT_ID     3
-#define AUTO_VW         10 // Mundo virtual para evitar conflitos
+// --- ECONOMIA 2026 ---
+#define PRECO_MOTO      3000
+#define PRECO_CARRO     7000
+#define PRECO_CAMINHAO  15000
 
-// Coordenadas corrigidas para evitar queda
+// --- VEÍCULOS ---
+#define VEH_MOTO        461 
+#define VEH_CARRO       405 
+#define VEH_CAMINHAO    403 
+
+// --- COORDENADAS ---
 #define AUTO_EXT_X 1411.5690
 #define AUTO_EXT_Y -1699.5178
 #define AUTO_EXT_Z 13.5394
@@ -15,76 +21,169 @@
 #define AUTO_INT_X 2033.4274
 #define AUTO_INT_Y 117.3727
 #define AUTO_INT_Z 1035.3000 
+#define AUTO_INT_ID 3
+#define AUTO_VW     10
 
-// --- VARIÁVEIS ---
+// Spawn do Veículo (Market)
+#define SPAWN_V_X 1400.0
+#define SPAWN_V_Y -1670.0
+#define SPAWN_V_Z 13.5
+#define SPAWN_V_A 90.0
+
 new EmTeste[MAX_PLAYERS], VeiculoTeste[MAX_PLAYERS], CategoriaTeste[MAX_PLAYERS], CheckStep[MAX_PLAYERS];
 
-public OnFilterScriptInit() {
-    DisableInteriorEnterExits();
-    // Pickups
-    CreatePickup(1318, 1, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z, 0); // Mundo 0 (Rua)
-    CreatePickup(1318, 1, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z, AUTO_VW); // Mundo 10 (Interior)
-    
-    Create3DTextLabel("{00FF00}Autoescola\n{FFFFFF}Pressione 'H' para entrar", -1, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z + 0.5, 10.0, 0);
-    return 1;
-}
+// --- FUNÇÕES AUXILIARES ---
 
-public OnPlayerKeyStateChange(playerid, newkeys, oldkeys) {
-    if(newkeys & KEY_CTRL_BACK) { // Tecla H
-        // ENTRAR NA AUTOESCOLA
-        if(IsPlayerInRangeOfPoint(playerid, 3.0, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z)) {
-            TogglePlayerControllable(playerid, false); // Congela para carregar mapa
-            SetPlayerInterior(playerid, AUTO_INT_ID);
-            SetPlayerVirtualWorld(playerid, AUTO_VW);
-            SetPlayerPos(playerid, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z);
-            
-            // Timer curto para garantir que o chão carregou
-            SetTimerEx("DescongelarPlayer", 1000, false, "i", playerid);
-            return 1;
-        }
-        
-        // SAIR DA AUTOESCOLA
-        if(IsPlayerInRangeOfPoint(playerid, 3.0, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z)) {
-            TogglePlayerControllable(playerid, false);
-            SetPlayerInterior(playerid, 0);
-            SetPlayerVirtualWorld(playerid, 0);
-            SetPlayerPos(playerid, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z);
-            
-            SetTimerEx("DescongelarPlayer", 1000, false, "i", playerid);
-            return 1;
-        }
-    }
-    return 1;
+stock CNHFile(playerid) {
+    new name[MAX_PLAYER_NAME], str[64];
+    GetPlayerName(playerid, name, sizeof(name));
+    format(str, sizeof(str), "licencas/%s.ini", name);
+    return str;
 }
 
 forward DescongelarPlayer(playerid);
 public DescongelarPlayer(playerid) {
     TogglePlayerControllable(playerid, true);
-    // Forçar o streaming dos objetos ao redor
-    SetCameraBehindPlayer(playerid); 
-    return 1;
-}
-
-// No OnDialogResponse, certifique-se de resetar o Virtual World ao iniciar o teste
-// para o player conseguir ver o carro na rua:
-public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]) {
-    if(dialogid == 9955 && response) {
-        // ... (seu código de preço e modelo)
-        
-        SetPlayerInterior(playerid, 0);
-        SetPlayerVirtualWorld(playerid, 0); // VOLTA PARA O MUNDO 0 (RUA)
-        
-        EmTeste[playerid] = 1;
-        VeiculoTeste[playerid] = CreateVehicle(vModel, SPAWN_V_X, SPAWN_V_Y, SPAWN_V_Z, SPAWN_V_A, 1, 1, 300);
-        
-        // Coloca no carro após um pequeno delay para evitar bugs de posição
-        SetTimerEx("ColocarNoCarro", 500, false, "ii", playerid, VeiculoTeste[playerid]);
-    }
+    SetCameraBehindPlayer(playerid);
     return 1;
 }
 
 forward ColocarNoCarro(playerid, veiculo);
 public ColocarNoCarro(playerid, veiculo) {
-    PutPlayerInVehicle(playerid, veiculo, 0);
+    if(IsPlayerConnected(playerid) && veiculo != -1) {
+        PutPlayerInVehicle(playerid, veiculo, 0);
+    }
+    return 1;
+}
+
+// --- CALLBACKS PRINCIPAIS ---
+
+public OnFilterScriptInit() {
+    DisableInteriorEnterExits();
+
+    // Pickups (Icone de "i" branco - 1239 ou 1318)
+    CreatePickup(1318, 1, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z, 0); 
+    CreatePickup(1318, 1, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z, AUTO_VW);
+
+    // NOMES NOS PICKUPS (Restaurados)
+    Create3DTextLabel("{00CCFF}Autoescola Los Santos\n{FFFFFF}Pressione {FFFF00}'H' {FFFFFF}para entrar", -1, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z + 0.5, 15.0, 0);
+    Create3DTextLabel("{00CCFF}Balcão de Atendimento\n{FFFFFF}Use {FFFF00}/exame {FFFFFF}para começar", -1, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z + 0.3, 8.0, AUTO_VW);
+    
+    print(">> [AUTOESCOLA 2026] Sistema Completo com TextLabels Carregado.");
+    return 1;
+}
+
+public OnPlayerKeyStateChange(playerid, newkeys, oldkeys) {
+    if(newkeys & KEY_CTRL_BACK) { // Tecla H
+        // Entrar (Vai para o Interior e VW 10)
+        if(IsPlayerInRangeOfPoint(playerid, 2.5, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z)) {
+            TogglePlayerControllable(playerid, false);
+            SetPlayerInterior(playerid, AUTO_INT_ID);
+            SetPlayerVirtualWorld(playerid, AUTO_VW);
+            SetPlayerPos(playerid, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z);
+            SetTimerEx("DescongelarPlayer", 1200, false, "i", playerid);
+        }
+        // Sair (Volta para Rua e VW 0)
+        else if(IsPlayerInRangeOfPoint(playerid, 2.5, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z)) {
+            TogglePlayerControllable(playerid, false);
+            SetPlayerInterior(playerid, 0);
+            SetPlayerVirtualWorld(playerid, 0);
+            SetPlayerPos(playerid, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z);
+            SetTimerEx("DescongelarPlayer", 1200, false, "i", playerid);
+        }
+    }
+    return 1;
+}
+
+public OnPlayerCommandText(playerid, cmdtext[]) {
+    if(!strcmp(cmdtext, "/exame", true)) {
+        if(!IsPlayerInRangeOfPoint(playerid, 3.0, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z)) 
+            return SendClientMessage(playerid, -1, "{FF0000}Vá até o balcão da Autoescola!");
+            
+        ShowPlayerDialog(playerid, 9955, DIALOG_STYLE_LIST, "{00CCFF}Categorias CNH", "Moto ($3k)\nCarro ($7k)\nCaminhão ($15k)", "Iniciar", "Sair");
+        return 1;
+    }
+    return 0;
+}
+
+public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]) {
+    if(dialogid == 9955) {
+        if(!response) return 1;
+
+        new vModel, preco;
+        if(listitem == 0) { preco = PRECO_MOTO; vModel = VEH_MOTO; CategoriaTeste[playerid] = 1; }
+        else if(listitem == 1) { preco = PRECO_CARRO; vModel = VEH_CARRO; CategoriaTeste[playerid] = 2; }
+        else if(listitem == 2) { preco = PRECO_CAMINHAO; vModel = VEH_CAMINHAO; CategoriaTeste[playerid] = 3; }
+        
+        if(GetPlayerMoney(playerid) < preco) return SendClientMessage(playerid, -1, "{FF0000}Dinheiro insuficiente!");
+        
+        GivePlayerMoney(playerid, -preco);
+        SetPlayerInterior(playerid, 0);
+        SetPlayerVirtualWorld(playerid, 0);
+        
+        EmTeste[playerid] = 1; 
+        CheckStep[playerid] = 0;
+        VeiculoTeste[playerid] = CreateVehicle(vModel, SPAWN_V_X, SPAWN_V_Y, SPAWN_V_Z, SPAWN_V_A, 1, 1, 300);
+        
+        SetTimerEx("ColocarNoCarro", 800, false, "ii", playerid, VeiculoTeste[playerid]);
+        SetPlayerCheckpoint(playerid, 1340.0, -1660.0, 13.5, 6.0); 
+        SendClientMessage(playerid, 0xFFFF00FF, "[AUTOESCOLA] Teste Iniciado. Complete o percurso sem destruir o veículo!");
+        return 1;
+    }
+    return 1;
+}
+
+public OnPlayerEnterCheckpoint(playerid) {
+    if(EmTeste[playerid]) {
+        new Float:hp; 
+        GetVehicleHealth(VeiculoTeste[playerid], hp);
+        if(hp < 850.0) return FinalizarTeste(playerid, false);
+        
+        CheckStep[playerid]++;
+        
+        // Logica de Checkpoints por categoria
+        if(CategoriaTeste[playerid] == 1) { // MOTO
+            if(CheckStep[playerid] == 1) SetPlayerCheckpoint(playerid, 1280.0, -1720.0, 13.5, 4.0);
+            else FinalizarTeste(playerid, true);
+        }
+        else if(CategoriaTeste[playerid] == 2) { // CARRO
+            if(CheckStep[playerid] == 1) SetPlayerCheckpoint(playerid, 1450.0, -1750.0, 13.5, 6.0);
+            else if(CheckStep[playerid] == 2) SetPlayerCheckpoint(playerid, 1411.0, -1710.0, 13.5, 6.0);
+            else FinalizarTeste(playerid, true);
+        }
+        else if(CategoriaTeste[playerid] == 3) { // CAMINHÃO
+            if(CheckStep[playerid] == 1) SetPlayerCheckpoint(playerid, 1600.0, -1600.0, 13.5, 8.0);
+            else if(CheckStep[playerid] == 2) SetPlayerCheckpoint(playerid, 1411.0, -1710.0, 13.5, 8.0);
+            else FinalizarTeste(playerid, true);
+        }
+    }
+    return 1;
+}
+
+stock FinalizarTeste(playerid, bool:aprovado) {
+    DisablePlayerCheckpoint(playerid);
+    if(VeiculoTeste[playerid] != -1) DestroyVehicle(VeiculoTeste[playerid]);
+    
+    VeiculoTeste[playerid] = -1;
+    EmTeste[playerid] = 0;
+    
+    if(aprovado) {
+        new file_path[64]; 
+        format(file_path, sizeof(file_path), "%s", CNHFile(playerid));
+        if(!dini_Exists(file_path)) dini_Create(file_path);
+        
+        if(CategoriaTeste[playerid] == 1) dini_IntSet(file_path, "Moto", 1);
+        else if(CategoriaTeste[playerid] == 2) dini_IntSet(file_path, "Carro", 1);
+        else if(CategoriaTeste[playerid] == 3) dini_IntSet(file_path, "Caminhao", 1);
+        
+        SendClientMessage(playerid, 0x00FF00FF, "[AUTOESCOLA] Parabéns! Você foi aprovado.");
+    } else {
+        SendClientMessage(playerid, 0xFF0000FF, "[AUTOESCOLA] Você falhou no teste!");
+    }
+    return 1;
+}
+
+public OnPlayerExitVehicle(playerid, vehicleid) {
+    if(EmTeste[playerid] && vehicleid == VeiculoTeste[playerid]) FinalizarTeste(playerid, false);
     return 1;
 }
