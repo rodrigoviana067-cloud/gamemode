@@ -1,37 +1,35 @@
 #define FILTERSCRIPT
 #include <a_samp>
-#include <dini>
 
-// Coordenadas da Porta (Lado de Fora) - Ajustado para a Calçada
-#define PREF_EXT_X 1481.1
-#define PREF_EXT_Y -1741.0
+// --- COORDENADAS AJUSTADAS ---
+// Porta de Fora (Movido da calçada para a parede da prefeitura)
+#define PREF_EXT_X 1481.0
+#define PREF_EXT_Y -1744.4 // Ajustado para encostar na porta
 #define PREF_EXT_Z 13.5
 
-// Coordenadas do Interior (Lado de Dentro)
+// Porta de Dentro (Ajustado para o player não nascer dentro da porta)
 #define PREF_INT_X 384.8
-#define PREF_INT_Y 173.8
+#define PREF_INT_Y 176.2 // Ajustado para frente da porta interna
 #define PREF_INT_Z 1008.3
 #define PREF_INT_ID 3
 
-// Balcão de Informações (Frente à bancada, não dentro)
+// Balcão de Empregos (Ajustado para fora da bancada)
 #define JOB_INFO_X 361.5
 #define JOB_INFO_Y 173.5
 #define JOB_INFO_Z 1008.3
 
 public OnFilterScriptInit() {
-    // ENTRADA (Seta Branca na Porta)
+    // ENTRADA (Seta Branca colada na porta de fora)
     CreatePickup(1318, 1, PREF_EXT_X, PREF_EXT_Y, PREF_EXT_Z, -1); 
-    Create3DTextLabel("{FFFFFF}Prefeitura\n{777777}Aperte 'H' para entrar", -1, PREF_EXT_X, PREF_EXT_Y, PREF_EXT_Z, 10.0, 0);
+    Create3DTextLabel("{FFFFFF}Prefeitura\n{777777}Aperte 'H' para entrar", -1, PREF_EXT_X, PREF_EXT_Y, PREF_EXT_Z + 0.5, 10.0, 0);
 
-    // SAÍDA (Seta Branca no Interior)
+    // SAÍDA (Seta Branca colada na porta de dentro)
     CreatePickup(1318, 1, PREF_INT_X, PREF_INT_Y, PREF_INT_Z, -1);
-    Create3DTextLabel("{FFFFFF}Sair\n{777777}Aperte 'H'", -1, PREF_INT_X, PREF_INT_Y, PREF_INT_Z, 10.0, 0);
+    Create3DTextLabel("{FFFFFF}Sair\n{777777}Aperte 'H'", -1, PREF_INT_X, PREF_INT_Y, PREF_INT_Z + 0.5, 10.0, 0);
 
-    // BALCÃO DE EMPREGOS (Ícone de Informação 'i')
+    // BALCÃO (Ícone 'i' centralizado no salão)
     CreatePickup(1239, 1, JOB_INFO_X, JOB_INFO_Y, JOB_INFO_Z, -1);
-    Create3DTextLabel("{00FF00}Central de Vagas\n{FFFFFF}Use /vagas para marcar no mapa", -1, JOB_INFO_X, JOB_INFO_Y, JOB_INFO_Z, 8.0, 0);
-    
-    print(">> [PREFEITURA 2026] Sistema de Marcacao Ativo.");
+    Create3DTextLabel("{00FF00}Central de Vagas\n{FFFFFF}Use /vagas", -1, JOB_INFO_X, JOB_INFO_Y, JOB_INFO_Z + 0.5, 8.0, 0);
     return 1;
 }
 
@@ -52,11 +50,10 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys) {
 public OnPlayerCommandText(playerid, cmdtext[]) {
     if(!strcmp(cmdtext, "/vagas", true)) {
         if(!IsPlayerInRangeOfPoint(playerid, 4.0, JOB_INFO_X, JOB_INFO_Y, JOB_INFO_Z))
-            return SendClientMessage(playerid, -1, "{FF0000}[ERRO] Voce deve estar no balcao da prefeitura!");
+            return SendClientMessage(playerid, -1, "{FF0000}Va ate o balcao de informacoes.");
 
-        ShowPlayerDialog(playerid, 777, DIALOG_STYLE_LIST, "Vagas Disponiveis em LS", 
-        "Motorista de Onibus (Agencia)\nGari (Deposito)\nEntregador de Pizza (Pizzaria)\nTaxista (Central)", 
-        "Marcar", "Fechar");
+        ShowPlayerDialog(playerid, 777, DIALOG_STYLE_LIST, "Vagas em LS (GPS)", 
+        "Motorista de Onibus\nGari\nEntregador de Pizza\nTaxista", "Marcar", "Fechar");
         return 1;
     }
     return 0;
@@ -64,27 +61,14 @@ public OnPlayerCommandText(playerid, cmdtext[]) {
 
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]) {
     if(dialogid == 777 && response) {
-        DisablePlayerCheckpoint(playerid); // Limpa marcação anterior
-        
+        DisablePlayerCheckpoint(playerid); 
         switch(listitem) {
-            case 0: { // Ônibus
-                SetPlayerCheckpoint(playerid, 1754.0, -1901.0, 13.5, 5.0);
-                SendClientMessage(playerid, 0x00FF00FF, "[GPS] Agencia de Onibus marcada no mapa!");
-            }
-            case 1: { // Gari
-                SetPlayerCheckpoint(playerid, 2187.0, -1972.0, 13.5, 5.0);
-                SendClientMessage(playerid, 0x00FF00FF, "[GPS] Deposito de Lixo marcado no mapa!");
-            }
-            case 2: { // Pizza
-                SetPlayerCheckpoint(playerid, 2101.0, -1805.0, 13.5, 5.0);
-                SendClientMessage(playerid, 0x00FF00FF, "[GPS] Pizzaria de LS marcada no mapa!");
-            }
-            case 3: { // Taxi
-                SetPlayerCheckpoint(playerid, 1740.0, -1861.0, 13.5, 5.0);
-                SendClientMessage(playerid, 0x00FF00FF, "[GPS] Central de Taxi marcada no mapa!");
-            }
+            case 0: SetPlayerCheckpoint(playerid, 1754.0, -1901.0, 13.5, 5.0);
+            case 1: SetPlayerCheckpoint(playerid, 2187.0, -1972.0, 13.5, 5.0);
+            case 2: SetPlayerCheckpoint(playerid, 2101.0, -1805.0, 13.5, 5.0);
+            case 3: SetPlayerCheckpoint(playerid, 1740.0, -1861.0, 13.5, 5.0);
         }
-        SendClientMessage(playerid, -1, "Siga o Checkpoint vermelho no seu minimapa.");
+        SendClientMessage(playerid, 0x00FF00FF, "[GPS] Local marcado no seu mapa!");
     }
     return 1;
 }
