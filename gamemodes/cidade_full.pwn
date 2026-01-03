@@ -1,6 +1,6 @@
 /* 
     CIDADE FULL 2026 - VERSÃO MASTER FINAL (MODULARIZADA)
-    Removido comandos conflitantes para rodar com Filterscripts.
+    Spawn Atualizado: LS Aeroporto (Coordenadas Customizadas)
 */
 
 #include <a_samp>
@@ -18,6 +18,12 @@ main()
 #define DIALOG_LOGIN        2000
 #define DIALOG_REGISTER     2001
 #define SKIN_NOVATO         26
+
+// NOVAS COORDENADAS DE SPAWN (LS)
+#define SPAWN_X 1642.8808
+#define SPAWN_Y -2239.0747
+#define SPAWN_Z 13.4961
+#define SPAWN_A 177.5711
 
 new bool:Logado[MAX_PLAYERS];
 new BikeNovato[MAX_PLAYERS];
@@ -43,18 +49,19 @@ public MostrarLogin(playerid) {
 public OnGameModeInit() {
     SetGameModeText("Cidade Full v4.5");
     
-    // Pickup Aeroporto
+    // Pickup ECO-BIKE (Mantido próximo ao spawn)
     PickupBike = CreatePickup(1239, 1, 1642.50, -2244.60, 13.50, -1);
     Create3DTextLabel("{00CCFF}ECO-BIKE\n{FFFFFF}Pise para pegar", 0xFFFFFFFF, 1642.50, -2244.60, 14.0, 10.0, 0, 0);
     
-    AddPlayerClass(SKIN_NOVATO, 1645.50, -2250.20, 13.50, 180.0, 0, 0, 0, 0, 0, 0);
+    // Classe padrão (usada na seleção de personagens se necessário)
+    AddPlayerClass(SKIN_NOVATO, SPAWN_X, SPAWN_Y, SPAWN_Z, SPAWN_A, 0, 0, 0, 0, 0, 0);
     return 1;
 }
 
 public OnPlayerConnect(playerid) {
     Logado[playerid] = false;
     BikeNovato[playerid] = -1;
-    SetTimerEx("MostrarLogin", 1500, false, "i", playerid); // Aumentado para 1.5s para carregar outros FS
+    SetTimerEx("MostrarLogin", 1500, false, "i", playerid); 
     return 1;
 }
 
@@ -70,9 +77,14 @@ public OnPlayerDisconnect(playerid, reason) {
 
 public OnPlayerSpawn(playerid) {
     if(!Logado[playerid]) return Kick(playerid);
-    SetPlayerPos(playerid, 1645.50, -2250.20, 13.50);
-    SetPlayerFacingAngle(playerid, 180.0);
+    
+    // Aplicando o novo Spawn
+    SetPlayerPos(playerid, SPAWN_X, SPAWN_Y, SPAWN_Z);
+    SetPlayerFacingAngle(playerid, SPAWN_A);
+    
     SetCameraBehindPlayer(playerid);
+    SetPlayerInterior(playerid, 0);
+    SetPlayerVirtualWorld(playerid, 0);
     return 1;
 }
 
@@ -124,7 +136,6 @@ public OnPlayerStateChange(playerid, newstate, oldstate) {
     return 1;
 }
 
-// RESPOSTAS DE DIÁLOGOS (Apenas Login/Registro)
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]) {
     new path[64];
     format(path, sizeof(path), GetConta(playerid));
@@ -136,7 +147,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]) {
         dini_Set(path, "Senha", inputtext);
         dini_IntSet(path, "Grana", 5000);
         Logado[playerid] = true;
-        SetSpawnInfo(playerid, 0, SKIN_NOVATO, 1645.50, -2250.20, 13.50, 180.0, 0, 0, 0, 0, 0, 0);
+        
+        // Atualizado com novas coordenadas
+        SetSpawnInfo(playerid, 0, SKIN_NOVATO, SPAWN_X, SPAWN_Y, SPAWN_Z, SPAWN_A, 0, 0, 0, 0, 0, 0);
         SpawnPlayer(playerid);
         return 1;
     }
@@ -145,10 +158,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]) {
         if(!strcmp(inputtext, dini_Get(path, "Senha"))) {
             Logado[playerid] = true;
             GivePlayerMoney(playerid, dini_Int(path, "Grana"));
-            SetSpawnInfo(playerid, 0, SKIN_NOVATO, 1645.50, -2250.20, 13.50, 180.0, 0, 0, 0, 0, 0, 0);
+            
+            // Atualizado com novas coordenadas
+            SetSpawnInfo(playerid, 0, SKIN_NOVATO, SPAWN_X, SPAWN_Y, SPAWN_Z, SPAWN_A, 0, 0, 0, 0, 0, 0);
             SpawnPlayer(playerid);
         } else MostrarLogin(playerid);
         return 1;
     }
-    return 0; // Permite que outros Filterscripts processem seus próprios diálogos
+    return 0; 
 }
