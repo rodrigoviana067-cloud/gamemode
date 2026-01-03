@@ -5,7 +5,7 @@
 // Porta de Fora (Exatamente na coordenada que você passou)
 #define PREF_EXT_X 1481.2259
 #define PREF_EXT_Y -1771.4321
-#define PREF_EXT_Z 13.5469 // Ajustado para o chão
+#define PREF_EXT_Z 18.7957 // Ajustado para o chão
 #define PREF_EXT_A 357.2106
 
 // Porta de Dentro (Interior da Prefeitura)
