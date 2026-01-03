@@ -2,61 +2,64 @@
 #include <a_samp>
 #include <dini>
 
-// Preços por Categoria (Economia 2026)
+// --- CONFIGURAÇÕES AUTOESCOLA 2026 ---
 #define PRECO_MOTO      3000
 #define PRECO_CARRO     7000
 #define PRECO_CAMINHAO  15000
 
-// Veículos de Teste
-#define VEH_MOTO        461 // PCJ-600
-#define VEH_CARRO       405 // Sentinel
-#define VEH_CAMINHAO    403 // Linerunner
+// Veículos
+#define VEH_MOTO        461 
+#define VEH_CARRO       405 
+#define VEH_CAMINHAO    403 
 
-// --- COORDENADAS ---
-// Local onde o /exame funciona (Original)
-#define LOCAL_AUTO      1215.0, -1812.0, 13.5
-// Local do Pickup de Entrada (Market) que você passou
+// 1. Pickup de ENTRADA (Calçada de Market que você passou antes)
 #define LOCAL_MARKET    1412.0202, -1699.9926, 13.5394
+
+// 2. NOVAS COORDENADAS (Interior da Autoescola SF)
+#define LOCAL_INT_SAIDA -2027.9200, -105.1830, 1035.1720
+#define ID_INTERIOR     3
+
+// 3. Balcão para o /exame (Um pouco à frente de onde você aparece)
+#define LOCAL_BALCAO    -2030.0000, -117.0000, 1035.1720
 
 #define DIALOG_AUTO     9955
 
-new EmTeste[MAX_PLAYERS];
-new VeiculoTeste[MAX_PLAYERS];
-new CategoriaTeste[MAX_PLAYERS]; 
-new CheckStep[MAX_PLAYERS];
+new EmTeste[MAX_PLAYERS], VeiculoTeste[MAX_PLAYERS], CategoriaTeste[MAX_PLAYERS], CheckStep[MAX_PLAYERS];
 
-stock CNHFile(playerid) {
-    new name[MAX_PLAYER_NAME], str[64];
+// Função de salvamento sem erros de compilação
+stock CNHFile(playerid, path[], size) {
+    new name[MAX_PLAYER_NAME];
     GetPlayerName(playerid, name, sizeof(name));
-    format(str, sizeof(str), "licencas/%s.ini", name);
-    return str;
+    format(path, size, "licencas/%s.ini", name);
 }
 
 public OnFilterScriptInit() {
-    // Pickup de Entrada em Market
-    CreatePickup(1318, 1, LOCAL_MARKET, -1);
+    // Pickup na RUA (Entrada)
+    CreatePickup(1318, 1, LOCAL_MARKET, 0);
     Create3DTextLabel("{00CCFF}Autoescola\n{FFFFFF}Aperte 'H' para entrar", -1, LOCAL_MARKET, 10.0, 0);
 
-    // Pickup de Saída no local original
-    CreatePickup(1318, 1, LOCAL_AUTO, -1);
+    // Pickup DENTRO (Saída)
+    CreatePickup(1318, 1, LOCAL_INT_SAIDA, -1);
+
+    // Pickup do BALCÃO (Onde usa o /exame)
+    CreatePickup(1239, 1, LOCAL_BALCAO, -1);
+    Create3DTextLabel("{FFFFFF}Balcão de Exames\n{FFFF00}Use /exame", -1, LOCAL_BALCAO, 5.0, 0);
     
-    // Pickup do Balcão de Exames (Local original)
-    CreatePickup(1239, 1, LOCAL_AUTO, -1);
-    Create3DTextLabel("{FFFFFF}Autoescola LS\n{FFFF00}Use /exame", -1, LOCAL_AUTO, 10.0, 0);
+    print(">> [AUTOESCOLA 2026] Coordenadas SF configuradas.");
     return 1;
 }
 
 public OnPlayerKeyStateChange(playerid, newkeys, oldkeys) {
     if(newkeys & KEY_CTRL_BACK) { // Tecla H
-        // Se estiver em Market, vai para o balcão
+        // ENTRAR
         if(IsPlayerInRangeOfPoint(playerid, 2.0, LOCAL_MARKET)) {
-            SetPlayerPos(playerid, LOCAL_AUTO);
-            SendClientMessage(playerid, -1, "{00CCFF}[AUTOESCOLA] Você entrou!");
+            SetPlayerInterior(playerid, ID_INTERIOR); // Evita cair do chão
+            SetPlayerPos(playerid, LOCAL_INT_SAIDA);
         }
-        // Se estiver no balcão, volta para Market
-        else if(IsPlayerInRangeOfPoint(playerid, 2.0, LOCAL_AUTO)) {
+        // SAIR
+        else if(IsPlayerInRangeOfPoint(playerid, 2.0, LOCAL_INT_SAIDA)) {
+            SetPlayerInterior(playerid, 0);
             SetPlayerPos(playerid, LOCAL_MARKET);
-            SendClientMessage(playerid, -1, "{00CCFF}[AUTOESCOLA] Você saiu!");
         }
     }
     return 1;
@@ -64,10 +67,11 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys) {
 
 public OnPlayerCommandText(playerid, cmdtext[]) {
     if(!strcmp(cmdtext, "/exame", true)) {
-        if(!IsPlayerInRangeOfPoint(playerid, 3.0, LOCAL_AUTO)) return SendClientMessage(playerid, -1, "{FF0000}Vá até o balcão!");
+        if(!IsPlayerInRangeOfPoint(playerid, 3.0, LOCAL_BALCAO)) 
+            return SendClientMessage(playerid, -1, "{FF0000}Vá até o balcão!");
         
-        ShowPlayerDialog(playerid, DIALOG_AUTO, DIALOG_STYLE_LIST, "{00CCFF}Autoescola - Categorias", 
-            "Categoria A (Moto) - $3.000\nCategoria B (Carro) - $7.000\nCategoria C (Caminhão) - $15.000", "Escolher", "Sair");
+        ShowPlayerDialog(playerid, DIALOG_AUTO, DIALOG_STYLE_LIST, "{00CCFF}Categorias", 
+            "Moto - $3.000\nCarro - $7.000\nCaminhão - $15.000", "Escolher", "Sair");
         return 1;
     }
     return 0;
@@ -82,19 +86,21 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]) {
             case 2: { preco = PRECO_CAMINHAO; veh = VEH_CAMINHAO; CategoriaTeste[playerid] = 3; }
         }
 
-        if(GetPlayerMoney(playerid) < preco) return SendClientMessage(playerid, -1, "{FF0000}Dinheiro insuficiente!");
+        if(GetPlayerMoney(playerid) < preco) return SendClientMessage(playerid, -1, "{FF0000}Sem grana!");
         
         GivePlayerMoney(playerid, -preco);
-        EmTeste[playerid] = 1;
-        CheckStep[playerid] = 0;
         
-        // Inicia o teste voltando para o mundo exterior
-        SetPlayerPos(playerid, 1210.0, -1820.0, 13.5);
-        VeiculoTeste[playerid] = CreateVehicle(veh, 1210.0, -1820.0, 13.5, 180.0, 1, 1, 120);
+        // Inicia o teste saindo do interior
+        SetPlayerInterior(playerid, 0); 
+        SetPlayerPos(playerid, 1400.0, -1670.0, 13.5);
+
+        VeiculoTeste[playerid] = CreateVehicle(veh, 1400.0, -1670.0, 13.5, 90.0, 1, 1, 120);
         PutPlayerInVehicle(playerid, VeiculoTeste[playerid], 0);
         
-        SetPlayerCheckpoint(playerid, 1245.0, -1850.0, 13.5, 5.0);
-        SendClientMessage(playerid, 0xFFFF00FF, "[AUTOESCOLA] Teste iniciado!");
+        SetPlayerCheckpoint(playerid, 1340.0, -1660.0, 13.5, 5.0);
+        EmTeste[playerid] = 1;
+        CheckStep[playerid] = 0;
+        SendClientMessage(playerid, 0xFFFF00FF, "Teste iniciado!");
     }
     return 1;
 }
@@ -103,9 +109,8 @@ public OnPlayerEnterCheckpoint(playerid) {
     if(EmTeste[playerid]) {
         CheckStep[playerid]++;
         switch(CheckStep[playerid]) {
-            case 1: SetPlayerCheckpoint(playerid, 1300.0, -1850.0, 13.5, 5.0);
-            case 2: SetPlayerCheckpoint(playerid, 1215.0, -1815.0, 13.5, 5.0);
-            case 3: FinalizarTeste(playerid, true);
+            case 1: SetPlayerCheckpoint(playerid, 1300.0, -1660.0, 13.5, 5.0);
+            case 2: FinalizarTeste(playerid, true);
         }
     }
     return 1;
@@ -117,16 +122,15 @@ stock FinalizarTeste(playerid, bool:aprovado) {
     EmTeste[playerid] = 0;
 
     if(aprovado) {
-        new file[64]; format(file, 64, "%s", CNHFile(playerid));
-        if(!dini_Exists(file)) dini_Create(file);
+        new path;
+        CNHFile(playerid, path, sizeof(path));
+        if(!dini_Exists(path)) dini_Create(path);
         
-        if(CategoriaTeste[playerid] == 1) dini_IntSet(file, "Moto", 1);
-        else if(CategoriaTeste[playerid] == 2) dini_IntSet(file, "Carro", 1);
-        else if(CategoriaTeste[playerid] == 3) dini_IntSet(file, "Caminhao", 1);
+        if(CategoriaTeste[playerid] == 1) dini_IntSet(path, "Moto", 1);
+        else if(CategoriaTeste[playerid] == 2) dini_IntSet(path, "Carro", 1);
+        else if(CategoriaTeste[playerid] == 3) dini_IntSet(path, "Caminhao", 1);
         
-        SendClientMessage(playerid, 0x00FF00FF, "[AUTOESCOLA] Aprovado!");
-    } else {
-        SendClientMessage(playerid, 0xFF0000FF, "[AUTOESCOLA] Falhou.");
+        SendClientMessage(playerid, 0x00FF00FF, "Aprovado! Licença salva.");
     }
     return 1;
 }
