@@ -9,9 +9,9 @@
 #define PREF_EXT_A 357.2106
 
 // Porta de Dentro (Interior da Prefeitura)
-#define PREF_INT_X 384.8
-#define PREF_INT_Y 176.2 
-#define PREF_INT_Z 1008.3
+#define PREF_INT_X 388.596
+#define PREF_INT_Y 173.6231
+#define PREF_INT_Z 1008.3828
 #define PREF_INT_ID 3
 
 // Balcão de Empregos (Local para usar o comando)
