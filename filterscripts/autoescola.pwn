@@ -49,10 +49,6 @@ public OnFilterScriptInit() {
     CreatePickup(1318, 1, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z, 0); 
     Create3DTextLabel("{FFFFFF}Autoescola\n{777777}Aperte 'H' para entrar", -1, AUTO_EXT_X, AUTO_EXT_Y, AUTO_EXT_Z + 0.5, 10.0, 0);
 
-    // SAÍDA (Dentro do interior ID 3)
-    CreatePickup(1318, 1, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z, 0);
-    Create3DTextLabel("{FFFFFF}Sair\n{777777}Aperte 'H'", -1, AUTO_INT_X, AUTO_INT_Y, AUTO_INT_Z + 0.5, 10.0, 0);
-
     // BALCÃO
     CreatePickup(1239, 1, AUTO_INFO_X, AUTO_INFO_Y, AUTO_INFO_Z, 0);
     Create3DTextLabel("{00FF00}Atendimento\n{FFFFFF}Use /exame", -1, AUTO_INFO_X, AUTO_INFO_Y, AUTO_INFO_Z + 0.5, 8.0, 0);
